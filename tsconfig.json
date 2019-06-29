@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    "preserveWatchOutput": true,
+
+    "rootDir": "src",
+    "outDir": "build",
+    "declaration": true,
+    "declarationDir": "./build",
+    "allowJs": false,
+    "sourceMap": true,
+    "inlineSourceMap": false,
+
+    "target": "es2017",
+    "module": "commonjs",
+    "lib": ["es2017", "esnext.asynciterable"],
+
+    "pretty": true,
+    "removeComments": false,
+    "preserveConstEnums": true,
+
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "importHelpers": true,
+
+    "strict": true,
+    "suppressImplicitAnyIndexErrors": true,
+
+    "noFallthroughCasesInSwitch": false,
+    "noUnusedParameters": false,
+    "noUnusedLocals": false
+  },
+  "exclude": [
+    "node_modules",
+    "build",
+    "build-turbo",
+    "__tests__",
+    "**/__tests__"
+  ]
+}
