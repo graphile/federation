@@ -1,13 +1,36 @@
 # @graphile/federation
 
-Apollo federation support for PostGraphile.
+Apollo federation support for PostGraphile (or any Graphile Engine schema).
 
-Usage:
+## Installation
 
 ```
 yarn add postgraphile @graphile/federation
-npx postgraphile --append-plugins @graphile/federation
 ```
+
+## CLI usage
+
+```
+postgraphile --append-plugins @graphile/federation
+```
+
+## Library usage
+
+```js
+const express = require("express");
+const { postgraphile } = require("postgraphile");
+const { default: FederationPlugin } = require("@graphile/federation");
+
+const app = express();
+app.use(
+  postgraphile(process.env.DATABASE_URL, "public", {
+    appendPlugins: [FederationPlugin],
+  })
+);
+app.listen(process.env.PORT || 3000);
+```
+
+## How?
 
 This plugin exposes the [Global Object Identification
 Specification](https://facebook.github.io/relay/graphql/objectidentification.htm)
