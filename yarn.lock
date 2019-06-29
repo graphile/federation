@@ -1552,10 +1552,10 @@ graceful-fs@^4.1.11, graceful-fs@^4.1.15, graceful-fs@^4.1.2:
   resolved "https://registry.yarnpkg.com/graceful-fs/-/graceful-fs-4.2.0.tgz#8d8fdc73977cb04104721cb53666c1ca64cd328b"
   integrity sha512-jpSvDPV4Cq/bgtpndIWbI5hmYxhQGHPC4d4cqBPb4DLniCfhJokdXhwhaDuLBGLQdvvRum/UiX6ECVIPvDXqdg==
 
-graphile-utils@^4.4.1:
-  version "4.4.1"
-  resolved "https://registry.yarnpkg.com/graphile-utils/-/graphile-utils-4.4.1.tgz#88efb2cc1e54f7b7371a88437c0bea27852d3131"
-  integrity sha512-UUPTW1eTsf0DSrPB1aHlpSgFwvBOrBqFpQjkHf0X99aXWsY5leXraApToles8q//qkpVFjVADsD1zSCu2uBoAQ==
+graphile-utils@^4.4.2:
+  version "4.4.2"
+  resolved "https://registry.yarnpkg.com/graphile-utils/-/graphile-utils-4.4.2.tgz#a9505b08d079de3d9b5c451bc45103e74dc4ff4d"
+  integrity sha512-gQEiKzO6YJ+J6p5mZ0sWp8ghCBY/dC9VfVHJhx3UrwGiqXbiYiXeEyS7IynOVmbz2mRnPAeTtPB2CTxneNgFxA==
   dependencies:
     debug "^4.1.1"
     graphql ">=0.9 <0.14 || ^14.0.2"

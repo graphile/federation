@@ -30,7 +30,7 @@
   "homepage": "https://github.com/graphile/federation#readme",
   "dependencies": {
     "@apollo/federation": "^0.6.8",
-    "graphile-utils": "^4.4.1"
+    "graphile-utils": "^4.4.2"
   },
   "devDependencies": {
     "@types/jest": "^24.0.13",
@@ -45,5 +45,9 @@
     "prettier": "^1.16.4",
     "ts-jest": "^24.0.2",
     "typescript": "^3.4.4"
-  }
+  },
+  "peerDependencies": {
+    "graphile-build": "^4.4.2"
+  },
+  "files": ["build"]
 }
