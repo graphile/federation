@@ -55,10 +55,6 @@ const SchemaExtensionPlugin = makeExtendSchemaPlugin(build => {
     `,
     resolvers: {
       Query: {
-        _service(_, _args, _context, { schema }) {
-          return schema;
-        },
-
         _entities(data, { representations }, context, resolveInfo) {
           const {
             graphile: { fieldContext },
@@ -66,6 +62,10 @@ const SchemaExtensionPlugin = makeExtendSchemaPlugin(build => {
           return representations.map((nodeId: string) =>
             resolveNode(nodeId, build, fieldContext, data, context, resolveInfo)
           );
+        },
+
+        _service(_, _args, _context, { schema }) {
+          return schema;
         },
       },
 
