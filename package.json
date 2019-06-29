@@ -29,6 +29,7 @@
   },
   "homepage": "https://github.com/graphile/federation#readme",
   "dependencies": {
+    "@apollo/federation": "^0.6.8",
     "graphile-utils": "^4.4.1"
   },
   "devDependencies": {
