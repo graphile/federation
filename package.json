@@ -1,0 +1,29 @@
+{
+  "name": "@graphile/federation",
+  "version": "0.0.1",
+  "description": "Apollo Federation support for Graphile Engine",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/graphile/federation.git"
+  },
+  "keywords": [
+    "apollo",
+    "federation",
+    "graphile",
+    "postgraphile",
+    "engine",
+    "postgres",
+    "pg",
+    "postgresql"
+  ],
+  "author": "Benjie Gillam <code@benjiegillam.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/graphile/federation/issues"
+  },
+  "homepage": "https://github.com/graphile/federation#readme"
+}
