@@ -4,18 +4,17 @@ import {
   gql,
 } from "graphile-utils";
 import { Plugin } from "graphile-build";
-import { printSchema } from "@apollo/federation";
+import printFederatedSchema from "./printFederatedSchema";
+import { ObjectTypeDefinition, Directive, StringValue } from "./AST";
 
-let lastSchema: any;
-let lastPrint: string;
-const memoizedPrintSchema = (schema: any) => {
-  if (schema !== lastSchema) {
-    lastSchema = schema;
-    lastPrint = printSchema(schema);
-  }
-  return lastPrint;
-};
-
+/**
+ * This plugin installs the schema outlined in the Apollo Federation spec, and
+ * the resolvers and types required. Comments have been added to make things
+ * clearer for consumers, and the Apollo fields have been deprecated so that
+ * users unconcerned with federation don't get confused.
+ *
+ * https://www.apollographql.com/docs/apollo-server/federation/federation-spec/#federation-schema-specification
+ */
 const SchemaExtensionPlugin = makeExtendSchemaPlugin(build => {
   const {
     graphql: { GraphQLScalarType, getNullableType },
@@ -29,23 +28,48 @@ const SchemaExtensionPlugin = makeExtendSchemaPlugin(build => {
   let Query: any;
   return {
     typeDefs: gql`
+      """
+      Used to represent a federated entity via its keys.
+      """
       scalar _Any
 
       """
-      Used to represent a set of fields. Grammatically, a field set is a selection set minus the braces.
+      Used to represent a set of fields. Grammatically, a field set is a
+      selection set minus the braces.
       """
       scalar _FieldSet
 
-      # a union of all types that use the @key directive
+      """
+      A union of all federated types (those that use the @key directive).
+      """
       union _Entity
 
+      """
+      Describes our federated service.
+      """
       type _Service {
+        """
+        The GraphQL Schema Language definiton of our endpoint including the
+        Apollo Federation directives (but not their definitions or the special
+        Apollo Federation fields).
+        """
         sdl: String
+          @deprecated(reason: "Only Apollo Federation should use this")
       }
 
       extend type Query {
+        """
+        Fetches a list of entities using their representations; used for Apollo
+        Federation.
+        """
         _entities(representations: [_Any!]!): [_Entity]!
+          @deprecated(reason: "Only Apollo Federation should use this")
+        """
+        Entrypoint for Apollo Federation to determine more information about
+        this service.
+        """
         _service: _Service!
+          @deprecated(reason: "Only Apollo Federation should use this")
       }
 
       directive @external on FIELD_DEFINITION
@@ -71,7 +95,7 @@ const SchemaExtensionPlugin = makeExtendSchemaPlugin(build => {
 
       _Service: {
         sdl(schema) {
-          return memoizedPrintSchema(schema);
+          return printFederatedSchema(schema);
         },
       },
 
@@ -97,69 +121,73 @@ const SchemaExtensionPlugin = makeExtendSchemaPlugin(build => {
   };
 });
 
-function Name(value: string) {
-  return {
-    kind: "Name",
-    value,
-  };
-}
-
-function StringValue(value: string, block = false) {
-  return {
-    kind: "StringValue",
-    value,
-    block,
-  };
-}
-
+/*
+ * This plugin adds the `@key(fields: "nodeId")` directive to the types that
+ * implement the Node interface, and adds these types to the _Entity union
+ * defined above.
+ */
 const AddKeyPlugin: Plugin = builder => {
   builder.hook("build", build => {
     build.federationEntityTypes = [];
     return build;
   });
 
+  // Find out what types implement the Node interface
   builder.hook("GraphQLObjectType:interfaces", (interfaces, build, context) => {
     const { getTypeByName, inflection, nodeIdFieldName } = build;
-    const { GraphQLObjectType: spec, Self } = context;
+    const {
+      GraphQLObjectType: spec,
+      Self,
+      scope: { isRootQuery },
+    } = context;
     const NodeInterface = getTypeByName(inflection.builtin("Node"));
-    if (!NodeInterface || !interfaces.includes(NodeInterface)) {
+
+    /*
+     * We only want to add federation to types that implement the Node
+     * interface, and aren't the Query root type.
+     */
+    if (isRootQuery || !NodeInterface || !interfaces.includes(NodeInterface)) {
       return interfaces;
     }
+
+    // Add this to the list of types to be in the _Entity union
     build.federationEntityTypes.push(Self);
+
+    /*
+     * We're going to add the `@key(fields: "nodeId")` directive to this type.
+     * First, we need to generate an `astNode` as if the type was generateted
+     * from a GraphQL SDL initially; then we assign this astNode to to the type
+     * (via type mutation, ick) so that Apollo Federation's `printSchema` can
+     * output it.
+     */
     const astNode = {
-      kind: "ObjectTypeDefinition",
-      name: Name(spec.name),
-      description: spec.description
-        ? StringValue(spec.description, true)
-        : undefined,
-      directives: [],
+      ...ObjectTypeDefinition(spec),
       ...Self.astNode,
     };
-    astNode.directives.push({
-      kind: "Directive",
-      name: Name("key"),
-      arguments: [
-        {
-          kind: "Argument",
-          name: Name("fields"),
-          value: StringValue(nodeIdFieldName),
-        },
-      ],
-    });
+    astNode.directives.push(
+      Directive("key", { fields: StringValue(nodeIdFieldName) })
+    );
     Self.astNode = astNode;
+
+    // We're not changing the interfaces, so return them unmodified.
     return interfaces;
   });
 
+  // Add our collected types to the _Entity union
   builder.hook("GraphQLUnionType:types", (types, build, context) => {
     const { Self } = context;
+    // If it's not the _Entity union, don't change it.
     if (Self.name !== "_Entity") {
       return types;
     }
     const { federationEntityTypes } = build;
+
+    // Add our types to the entity types
     return [...types, ...federationEntityTypes];
   });
 };
 
+// Our federation implementation combines these two plugins:
 export default makePluginByCombiningPlugins(
   SchemaExtensionPlugin,
   AddKeyPlugin
