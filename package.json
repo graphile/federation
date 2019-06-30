@@ -5,6 +5,7 @@
   "main": "build/index.js",
   "scripts": {
     "build": "tsc",
+    "lint": "eslint 'src/**/*.ts'",
     "watch": "tsc --watch",
     "test": "jest"
   },
@@ -51,7 +52,5 @@
   "peerDependencies": {
     "graphile-build": "^4.4.2"
   },
-  "files": [
-    "build"
-  ]
+  "files": ["build"]
 }
