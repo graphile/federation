@@ -23,6 +23,7 @@ const SchemaExtensionPlugin = makeExtendSchemaPlugin(build => {
     $$nodeType,
     getTypeByName,
     inflection,
+    nodeIdFieldName,
   } = build;
   // Cache
   let Query: any;
@@ -83,9 +84,23 @@ const SchemaExtensionPlugin = makeExtendSchemaPlugin(build => {
           const {
             graphile: { fieldContext },
           } = resolveInfo;
-          return representations.map((nodeId: string) =>
-            resolveNode(nodeId, build, fieldContext, data, context, resolveInfo)
-          );
+          return representations.map((representation: any) => {
+            if (!representation || typeof representation !== "object") {
+              throw new Error("Invalid representation");
+            }
+            const { __typename, [nodeIdFieldName]: nodeId } = representation;
+            if (!__typename || typeof nodeId !== "string") {
+              throw new Error("Failed to interpret representation");
+            }
+            return resolveNode(
+              nodeId,
+              build,
+              fieldContext,
+              data,
+              context,
+              resolveInfo
+            );
+          });
         },
 
         _service(_, _args, _context, { schema }) {
