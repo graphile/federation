@@ -1,6 +1,6 @@
 {
   "name": "@graphile/federation",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Apollo Federation support for Graphile Engine",
   "main": "build/index.js",
   "scripts": {
@@ -52,5 +52,7 @@
   "peerDependencies": {
     "graphile-build": "^4.4.2"
   },
-  "files": ["build"]
+  "files": [
+    "build"
+  ]
 }
