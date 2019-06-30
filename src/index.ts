@@ -153,7 +153,7 @@ const AddKeyPlugin: Plugin = builder => {
     const {
       GraphQLObjectType: spec,
       Self,
-      scope: { isRootQuery },
+      scope: { isRootQuery, pgIntrospection },
     } = context;
     const NodeInterface = getTypeByName(inflection.builtin("Node"));
 
@@ -169,7 +169,8 @@ const AddKeyPlugin: Plugin = builder => {
     build.federationEntityTypes.push(Self);
 
     /*
-     * We're going to add the `@key(fields: "nodeId")` directive to this type.
+     * We're going to add the key directive to this type. If this type has a
+     * defined primary key we will use that, otherwise `@key(fields: "nodeId")`
      * First, we need to generate an `astNode` as if the type was generateted
      * from a GraphQL SDL initially; then we assign this astNode to to the type
      * (via type mutation, ick) so that Apollo Federation's `printSchema` can
@@ -179,8 +180,17 @@ const AddKeyPlugin: Plugin = builder => {
       ...ObjectTypeDefinition(spec),
       ...Self.astNode,
     };
+
+    const {
+      primaryKeyConstraint: { keyAttributes }
+    } = pgIntrospection;
+    const primaryKeyNames = keyAttributes.map(attr => inflection.column(attr));
+    const keyName = primaryKeyNames.length
+      ? primaryKeyNames.join(' ')
+      : nodeIdFieldName;
+
     astNode.directives.push(
-      Directive("key", { fields: StringValue(nodeIdFieldName) })
+      Directive("key", { fields: StringValue(keyName) })
     );
     Self.astNode = astNode;
 
