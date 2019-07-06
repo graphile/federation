@@ -22,8 +22,10 @@ const SchemaExtensionPlugin = makeExtendSchemaPlugin(build => {
     $$isQuery,
     $$nodeType,
     getTypeByName,
+    scopeByType,
     inflection,
     nodeIdFieldName,
+    getNodeIdForTypeAndIdentifiers,
   } = build;
   // Cache
   let Query: any;
@@ -88,18 +90,60 @@ const SchemaExtensionPlugin = makeExtendSchemaPlugin(build => {
             if (!representation || typeof representation !== "object") {
               throw new Error("Invalid representation");
             }
-            const { __typename, [nodeIdFieldName]: nodeId } = representation;
-            if (!__typename || typeof nodeId !== "string") {
-              throw new Error("Failed to interpret representation");
+
+            const { __typename } = representation;
+            if (!__typename) {
+              throw new Error(
+                "Failed to interpret representation, no typename"
+              );
             }
-            return resolveNode(
-              nodeId,
-              build,
-              fieldContext,
-              data,
-              context,
-              resolveInfo
-            );
+
+            if (nodeIdFieldName in representation) {
+              const { [nodeIdFieldName]: nodeId } = representation;
+              if (typeof nodeId !== "string") {
+                throw new Error(
+                  "Failed to interpret representation, invalid nodeId"
+                );
+              }
+
+              return resolveNode(
+                nodeId,
+                build,
+                fieldContext,
+                data,
+                context,
+                resolveInfo
+              );
+            } else {
+              // This only works with NodePlugin enabled
+              if (!getNodeIdForTypeAndIdentifiers) {
+                throw new Error("Failed to resolve node by identifiers");
+              }
+
+              const type = getTypeByName(__typename);
+              const {
+                pgIntrospection: {
+                  primaryKeyConstraint: { keyAttributes: attrs },
+                },
+              } = scopeByType.get(type);
+              const keyNames = attrs.map(attr => inflection.column(attr));
+              const identifiers = keyNames.map(name => representation[name]);
+
+              const nodeId = getNodeIdForTypeAndIdentifiers.call(
+                build,
+                type,
+                ...identifiers
+              );
+
+              return resolveNode(
+                nodeId,
+                build,
+                fieldContext,
+                data,
+                context,
+                resolveInfo
+              );
+            }
           });
         },
 
