@@ -226,16 +226,14 @@ const AddKeyPlugin: Plugin = builder => {
     };
 
     const {
-      primaryKeyConstraint: { keyAttributes }
+      primaryKeyConstraint: { keyAttributes },
     } = pgIntrospection;
     const primaryKeyNames = keyAttributes.map(attr => inflection.column(attr));
     const keyName = primaryKeyNames.length
-      ? primaryKeyNames.join(' ')
+      ? primaryKeyNames.join(" ")
       : nodeIdFieldName;
 
-    astNode.directives.push(
-      Directive("key", { fields: StringValue(keyName) })
-    );
+    astNode.directives.push(Directive("key", { fields: StringValue(keyName) }));
     Self.astNode = astNode;
 
     // We're not changing the interfaces, so return them unmodified.
