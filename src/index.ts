@@ -126,8 +126,9 @@ const SchemaExtensionPlugin = makeExtendSchemaPlugin(build => {
                   primaryKeyConstraint: { keyAttributes: attrs },
                 },
               } = scopeByType.get(type);
-              const keyNames = attrs.map(attr => inflection.column(attr));
-              const identifiers = keyNames.map(name => representation[name]);
+              const identifiers = attrs.map(
+                attr => representation[inflection.column(attr)]
+              );
 
               const nodeId = getNodeIdForTypeAndIdentifiers.call(
                 build,
