@@ -6,6 +6,7 @@ import {
 import { Plugin } from "graphile-build";
 import printFederatedSchema from "./printFederatedSchema";
 import { ObjectTypeDefinition, Directive, StringValue } from "./AST";
+import { PgAttribute, PgClass } from "graphile-build-pg";
 
 /**
  * This plugin installs the schema outlined in the Apollo Federation spec, and
@@ -22,8 +23,10 @@ const SchemaExtensionPlugin = makeExtendSchemaPlugin(build => {
     $$isQuery,
     $$nodeType,
     getTypeByName,
+    scopeByType,
     inflection,
     nodeIdFieldName,
+    pgSql: sql,
   } = build;
   // Cache
   let Query: any;
@@ -84,22 +87,67 @@ const SchemaExtensionPlugin = makeExtendSchemaPlugin(build => {
           const {
             graphile: { fieldContext },
           } = resolveInfo;
-          return representations.map((representation: any) => {
+          return representations.map(async (representation: any) => {
             if (!representation || typeof representation !== "object") {
               throw new Error("Invalid representation");
             }
+
             const { __typename, [nodeIdFieldName]: nodeId } = representation;
-            if (!__typename || typeof nodeId !== "string") {
-              throw new Error("Failed to interpret representation");
+            if (!__typename) {
+              throw new Error(
+                "Failed to interpret representation, no typename"
+              );
             }
-            return resolveNode(
-              nodeId,
-              build,
-              fieldContext,
-              data,
-              context,
-              resolveInfo
-            );
+            if (nodeId) {
+              if (typeof nodeId !== "string") {
+                throw new Error(
+                  "Failed to interpret representation, invalid nodeId"
+                );
+              }
+              const x = resolveNode(
+                nodeId,
+                build,
+                fieldContext,
+                data,
+                context,
+                resolveInfo
+              );
+
+              return x;
+            } else {
+              const type = getTypeByName(__typename);
+              const { pgIntrospection: table } = scopeByType.get(type);
+
+              if (!table.primaryKeyConstraint) {
+                throw new Error("Failed to interpret representation");
+              }
+              const {
+                primaryKeyConstraint: { keyAttributes },
+              } = table;
+
+              const whereClause = sql.fragment`(${sql.join(
+                keyAttributes.map(
+                  (attr: PgAttribute) =>
+                    sql.fragment`${sql.identifier(attr.name)} = ${sql.value(
+                      representation[inflection.column(attr)]
+                    )}`
+                ),
+                ") and ("
+              )})`;
+
+              const rows = await resolveInfo.graphile.selectGraphQLResultFromTable(
+                sql.identifier(table.namespace, table.name),
+                (_alias, queryBuilder) => {
+                  queryBuilder.where(whereClause);
+                }
+              );
+
+              if (rows.count !== 1) {
+                throw new Error("Failed to interpret representation");
+              }
+
+              return rows[0];
+            }
           });
         },
 
@@ -131,7 +179,7 @@ const SchemaExtensionPlugin = makeExtendSchemaPlugin(build => {
         serialize(value: any) {
           return value;
         },
-      }),
+      }) as any,
     },
   };
 });
@@ -145,6 +193,44 @@ const AddKeyPlugin: Plugin = builder => {
   builder.hook("build", build => {
     build.federationEntityTypes = [];
     return build;
+  });
+
+  builder.hook("GraphQLObjectType", (type, build, context) => {
+    const {
+      scope: { pgIntrospection, isPgRowType },
+    } = context;
+
+    const { inflection } = build;
+
+    if (
+      !(
+        isPgRowType &&
+        pgIntrospection.isSelectable &&
+        pgIntrospection.namespace &&
+        pgIntrospection.primaryKeyConstraint
+      )
+    ) {
+      return type;
+    }
+
+    const primaryKeyNames = pgIntrospection.primaryKeyConstraint.keyAttributes.map(
+      (attr: PgAttribute) => inflection.column(attr)
+    );
+
+    if (!primaryKeyNames.length) {
+      return type;
+    }
+
+    const astNode = {
+      ...ObjectTypeDefinition({ name: type.name }),
+      ...type.astNode,
+    };
+
+    (astNode.directives as any).push(
+      Directive("key", { fields: StringValue(primaryKeyNames.join(" ")) })
+    );
+
+    return { ...type, astNode } as typeof type;
   });
 
   // Find out what types implement the Node interface
@@ -196,6 +282,8 @@ const AddKeyPlugin: Plugin = builder => {
       return types;
     }
     const { federationEntityTypes } = build;
+
+    console.log(federationEntityTypes.map((type: any) => type.name));
 
     // Add our types to the entity types
     return [...types, ...federationEntityTypes];
