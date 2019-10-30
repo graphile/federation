@@ -42,3 +42,16 @@ export function Directive(name: string, args: { [argName: string]: any } = {}) {
     })),
   };
 }
+
+export function Field(name: string, args: { [argName: string]: any } = {}) {
+  return {
+    kind: "Field",
+    name: Name(name),
+    arguments: Object.entries(args).map(([argName, value]) => ({
+      kind: "Argument",
+      name: Name(argName),
+      value,
+    })),
+    directives: [],
+  };
+}
