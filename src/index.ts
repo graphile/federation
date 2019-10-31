@@ -331,7 +331,7 @@ const FederatePgTypesPlugin: Plugin = (builder, { subscriptions }) => {
   });
 
   /*
-   * Adds
+   * Adds key attribute to postgres types
    */
   builder.hook("GraphQLObjectType", (type, build, context) => {
     const {
