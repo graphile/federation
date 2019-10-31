@@ -1,0 +1,35 @@
+{
+  "name": "examples",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "@apollo/federation": "^0.10.2",
+    "@apollo/gateway": "^0.10.8",
+    "@graphile-contrib/pg-simplify-inflector": "^5.0.0-beta.1",
+    "@graphile/federation": "../",
+    "apollo-server": "^2.9.7",
+    "express": "^4.17.1",
+    "graphile-build": "^4.4.5",
+    "graphile-build-pg": "^4.4.5",
+    "graphile-utils": "^4.4.5",
+    "graphql": "14.5.8",
+    "pg": "^7.12.1",
+    "postgraphile": "^4.4.4",
+    "wait-on": "^3.3.0"
+  },
+  "devDependencies": {
+    "concurrently": "^5.0.0"
+  },
+  "resolutions": {
+    "graphql": "14.5.8"
+  },
+  "scripts": {
+    "start": "concurrently yarn:start-*",
+    "start-accounts": "node ./accounts/index.js",
+    "start-products": "node ./products/index.js",
+    "start-gateway": "node ./gateway/index.js",
+    "start-reviews": "node ./reviews/index.js"
+  }
+}
