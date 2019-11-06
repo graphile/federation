@@ -6,7 +6,7 @@ import {
 import { Plugin } from "graphile-build";
 import printFederatedSchema from "./printFederatedSchema";
 import { ObjectTypeDefinition, Directive, StringValue } from "./AST";
-import { PgAttribute, PgClass } from "graphile-build-pg";
+import { PgAttribute, QueryBuilder } from "graphile-build-pg";
 
 /**
  * This plugin installs the schema outlined in the Apollo Federation spec, and
@@ -27,6 +27,9 @@ const SchemaExtensionPlugin = makeExtendSchemaPlugin(build => {
     inflection,
     nodeIdFieldName,
     pgSql: sql,
+    parseResolveInfo,
+    pgQueryFromResolveData: queryFromResolveData,
+    pgPrepareAndRun,
   } = build;
   // Cache
   let Query: any;
@@ -84,6 +87,7 @@ const SchemaExtensionPlugin = makeExtendSchemaPlugin(build => {
     resolvers: {
       Query: {
         _entities(data, { representations }, context, resolveInfo) {
+          const { pgClient } = context;
           const {
             graphile: { fieldContext },
           } = resolveInfo;
@@ -104,7 +108,7 @@ const SchemaExtensionPlugin = makeExtendSchemaPlugin(build => {
                   "Failed to interpret representation, invalid nodeId"
                 );
               }
-              const x = resolveNode(
+              return resolveNode(
                 nodeId,
                 build,
                 fieldContext,
@@ -112,8 +116,6 @@ const SchemaExtensionPlugin = makeExtendSchemaPlugin(build => {
                 context,
                 resolveInfo
               );
-
-              return x;
             } else {
               const type = getTypeByName(__typename);
               const { pgIntrospection: table } = scopeByType.get(type);
@@ -135,18 +137,32 @@ const SchemaExtensionPlugin = makeExtendSchemaPlugin(build => {
                 ") and ("
               )})`;
 
-              const rows = await resolveInfo.graphile.selectGraphQLResultFromTable(
-                sql.identifier(table.namespace, table.name),
-                (_alias, queryBuilder) => {
-                  queryBuilder.where(whereClause);
-                }
+              const resolveData = fieldContext.getDataFromParsedResolveInfoFragment(
+                parseResolveInfo(resolveInfo),
+                type
               );
 
-              if (rows.count !== 1) {
-                throw new Error("Failed to interpret representation");
-              }
+              const query = queryFromResolveData(
+                sql.identifier(table.namespace.name, table.name),
+                undefined,
+                resolveData,
+                {
+                  useAsterisk: false, // Because it's only a single relation, no need
+                },
+                (queryBuilder: QueryBuilder) => {
+                  queryBuilder.where(whereClause);
+                },
+                context,
+                resolveInfo.rootValue
+              );
 
-              return rows[0];
+              const { text, values } = sql.compile(query);
+
+              const {
+                rows: [row],
+              } = await pgPrepareAndRun(pgClient, text, values);
+
+              return { [$$nodeType]: __typename, ...row };
             }
           });
         },
@@ -179,7 +195,7 @@ const SchemaExtensionPlugin = makeExtendSchemaPlugin(build => {
         serialize(value: any) {
           return value;
         },
-      }) as any,
+      }),
     },
   };
 });
@@ -282,8 +298,6 @@ const AddKeyPlugin: Plugin = builder => {
       return types;
     }
     const { federationEntityTypes } = build;
-
-    console.log(federationEntityTypes.map((type: any) => type.name));
 
     // Add our types to the entity types
     return [...types, ...federationEntityTypes];
