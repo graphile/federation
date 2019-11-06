@@ -5,7 +5,24 @@ import {
 } from "graphile-utils";
 import { Plugin } from "graphile-build";
 import printFederatedSchema from "./printFederatedSchema";
-import { ObjectTypeDefinition, Directive, StringValue } from "./AST";
+import { ObjectTypeDefinition, Directive, StringValue, Field } from "./AST";
+import { PgAttribute } from "graphile-build-pg";
+import { GraphQLFieldConfig } from "graphql";
+
+/**
+ * TODO:
+ *  - [ ] Support compound primary keys for federated relations (ie @federated on a GraphQLObjectType with multiple compound keys and @external columns)
+ */
+
+/*
+ * Sets up storage used by other plugins
+ */
+const BaseFederatedPlugin: Plugin = builder => {
+  builder.hook("build", build => {
+    build.federationEntityTypeResolvers = [];
+    return build;
+  });
+};
 
 /**
  * This plugin installs the schema outlined in the Apollo Federation spec, and
@@ -18,15 +35,15 @@ import { ObjectTypeDefinition, Directive, StringValue } from "./AST";
 const SchemaExtensionPlugin = makeExtendSchemaPlugin(build => {
   const {
     graphql: { GraphQLScalarType, getNullableType },
-    resolveNode,
     $$isQuery,
-    $$nodeType,
     getTypeByName,
     inflection,
-    nodeIdFieldName,
+    federationEntityTypeResolvers,
   } = build;
+
   // Cache
   let Query: any;
+
   return {
     typeDefs: gql`
       """
@@ -77,30 +94,57 @@ const SchemaExtensionPlugin = makeExtendSchemaPlugin(build => {
       directive @requires(fields: _FieldSet!) on FIELD_DEFINITION
       directive @provides(fields: _FieldSet!) on FIELD_DEFINITION
       directive @key(fields: _FieldSet!) on OBJECT | INTERFACE
+      directive @extends on OBJECT | INTERFACE
     `,
     resolvers: {
       Query: {
-        _entities(data, { representations }, context, resolveInfo) {
-          const {
-            graphile: { fieldContext },
-          } = resolveInfo;
-          return representations.map((representation: any) => {
-            if (!representation || typeof representation !== "object") {
-              throw new Error("Invalid representation");
+        async _entities(data, args, resolveContext, resolveInfo) {
+          const { representations } = args;
+
+          /**
+           * Right now we do one fetch per representation. We could optimize
+           * to do one fetch per type.
+           */
+          const entities = representations.map(async (representation: any) => {
+            if (!representation.__typename) {
+              throw new Error(
+                "Failed to interpret representation. No __typename"
+              );
             }
-            const { __typename, [nodeIdFieldName]: nodeId } = representation;
-            if (!__typename || typeof nodeId !== "string") {
-              throw new Error("Failed to interpret representation");
+
+            const schemaType = resolveInfo.schema.getType(
+              representation.__typename
+            );
+
+            if (!schemaType) {
+              throw new Error(
+                `Failed to find __typename ${representation.__typename}`
+              );
             }
-            return resolveNode(
-              nodeId,
-              build,
-              fieldContext,
+
+            const resolver =
+              federationEntityTypeResolvers[representation.__typename];
+
+            if (!resolver) {
+              throw new Error(
+                `Failed to find resolver for ${representation.__typename}`
+              );
+            }
+
+            const result = await resolver.resolve(
               data,
-              context,
+              representation,
+              resolveContext,
               resolveInfo
             );
+
+            return {
+              ...result,
+              __typename: representation.__typename,
+            };
           });
+
+          return Promise.all(entities);
         },
 
         _service(_, _args, _context, { schema }) {
@@ -116,12 +160,11 @@ const SchemaExtensionPlugin = makeExtendSchemaPlugin(build => {
 
       _Entity: {
         __resolveType(value) {
-          // This uses the same resolution as the Node interface, which can be found in graphile-build's NodePlugin
           if (value === $$isQuery) {
             if (!Query) Query = getTypeByName(inflection.builtin("Query"));
             return Query;
-          } else if (value[$$nodeType]) {
-            return getNullableType(value[$$nodeType]);
+          } else if (value.__typename) {
+            return getNullableType(value.__typename);
           }
         },
       },
@@ -137,55 +180,372 @@ const SchemaExtensionPlugin = makeExtendSchemaPlugin(build => {
 });
 
 /*
- * This plugin adds the `@key(fields: "nodeId")` directive to the types that
- * implement the Node interface, and adds these types to the _Entity union
- * defined above.
+ * Alters the return type of any federated fields and wraps the underlying reducer
+ * so a field with a smart comments @federated User(userId) would have its type changed
+ * from, say ID, to User and reference the userId column.
  */
-const AddKeyPlugin: Plugin = builder => {
+const ChangeFederatedReturnTypePlugin: Plugin = builder => {
+  builder.hook("GraphQLObjectType:fields:field", (field, build, context) => {
+    const {
+      scope: { pgFieldIntrospection },
+    } = context;
+    const { getTypeByName } = build;
+
+    if (
+      !pgFieldIntrospection ||
+      !pgFieldIntrospection.tags ||
+      !pgFieldIntrospection.tags.federated
+    ) {
+      return field;
+    }
+
+    const tag: string = pgFieldIntrospection.tags.federated.trim();
+    const originType = tag.substr(0, tag.indexOf("("));
+    const fieldDefinition = tag.slice(tag.indexOf("(") + 1, -1);
+
+    const Type = getTypeByName(originType);
+
+    if (!Type) {
+      throw new Error(
+        `Unknown Federated Type ${originType}. Maybe define it via external types?`
+      );
+    }
+
+    return {
+      description: field.description,
+      type: Type,
+      resolve: async (source, args, context, resolveInfo) => {
+        const result = field.resolve
+          ? await field.resolve!(source, args, context, resolveInfo)
+          : null;
+        return { [fieldDefinition]: result, __typename: originType };
+      },
+    };
+  });
+};
+
+/*
+ * Adds the @extends directive to any of our externally defined
+ * types that have a key so that its printed correctly in the
+ * federatedSchema. Also adds federationEntityTypeResolvers as
+ * indentity for external types.
+ */
+const FederateExternalTypesPlugin: Plugin = builder => {
+  builder.hook("GraphQLObjectType", (type, build, context) => {
+    const {
+      scope: { pgIntrospection, directives },
+    } = context;
+
+    if (!pgIntrospection && directives) {
+      const astNode = {
+        ...ObjectTypeDefinition({ name: type.name }),
+        ...type.astNode,
+      };
+
+      if (directives.key) {
+        (astNode.directives as any).push(
+          Directive("key", { fields: StringValue(directives.key.fields) })
+        );
+      }
+
+      if (directives.extends) {
+        (astNode.directives as any).push(Directive("extends"));
+      }
+
+      return { ...type, astNode } as typeof type;
+    }
+
+    return type;
+  });
+
+  builder.hook("GraphQLObjectType:fields", (fields, build, context) => {
+    const { getTypeByName } = build;
+    const {
+      Self,
+      scope: { pgIntrospection, directives },
+      fieldWithHooks,
+    } = context;
+
+    const { federationEntityTypeResolvers } = build;
+
+    /** External Type  */
+    if (
+      !pgIntrospection &&
+      directives &&
+      directives.key &&
+      directives.extends
+    ) {
+      /* maybe support _resolveReference?? */
+      /* We slightly abuse fieldWithHooks here but it seems to work  */
+      federationEntityTypeResolvers[Self.name] = fieldWithHooks(
+        "__resolveReference",
+        {
+          type: Self,
+          args: {
+            representation: getTypeByName("_Any"),
+          } /* TODO */,
+          resolve(representation: any) {
+            return representation;
+          },
+        },
+        {}
+      );
+    }
+
+    return fields;
+  });
+
+  /*
+   * Adds external astNode directive to any key fields with an exernal field
+   * directive on them
+   */
+  builder.hook("GraphQLObjectType:fields:field", (field, build, context) => {
+    const {
+      scope: { pgFieldIntrospection, fieldDirectives, fieldName },
+    } = context;
+
+    if (!pgFieldIntrospection && fieldDirectives && fieldDirectives.external) {
+      const astNode = {
+        ...Field(fieldName!),
+        ...field.astNode,
+      };
+
+      (astNode.directives as any).push(Directive("external"));
+      return { ...field, astNode } as GraphQLFieldConfig<any, any, any>;
+    }
+
+    return field;
+  });
+};
+
+/*
+ * This plugin adds the glue for federation of postgres types
+ * to work. It adds @key diretive for the primary key, creates
+ * the resolveReference function for __entities and adds the type
+ * to the _Entity union type
+ */
+const FederatePgTypesPlugin: Plugin = (builder, { subscriptions }) => {
   builder.hook("build", build => {
     build.federationEntityTypes = [];
     return build;
   });
 
-  // Find out what types implement the Node interface
-  builder.hook("GraphQLObjectType:interfaces", (interfaces, build, context) => {
-    const { getTypeByName, inflection, nodeIdFieldName } = build;
+  /*
+   * Adds key attribute to postgres types
+   */
+  builder.hook("GraphQLObjectType", (type, build, context) => {
     const {
-      GraphQLObjectType: spec,
-      Self,
-      scope: { isRootQuery },
+      scope: { pgIntrospection, isPgRowType },
     } = context;
-    const NodeInterface = getTypeByName(inflection.builtin("Node"));
 
-    /*
-     * We only want to add federation to types that implement the Node
-     * interface, and aren't the Query root type.
-     */
-    if (isRootQuery || !NodeInterface || !interfaces.includes(NodeInterface)) {
-      return interfaces;
+    const { inflection } = build;
+
+    if (
+      !(
+        isPgRowType &&
+        pgIntrospection.isSelectable &&
+        pgIntrospection.namespace &&
+        pgIntrospection.primaryKeyConstraint
+      )
+    ) {
+      return type;
     }
 
-    // Add this to the list of types to be in the _Entity union
-    build.federationEntityTypes.push(Self);
+    const primaryKeyNames = pgIntrospection.primaryKeyConstraint.keyAttributes.map(
+      (attr: PgAttribute) => inflection.column(attr)
+    );
+
+    if (!primaryKeyNames.length) {
+      return type;
+    }
+
+    const astNode = {
+      ...ObjectTypeDefinition({ name: type.name }),
+      ...type.astNode,
+    };
+
+    (astNode.directives as any).push(
+      Directive("key", { fields: StringValue(primaryKeyNames.join(" ")) })
+    );
+
+    return { ...type, astNode } as typeof type;
+  });
+
+  builder.hook("GraphQLObjectType:fields", (fields, build, context) => {
+    const {
+      Self,
+      GraphQLObjectType: objectType,
+      scope: { pgIntrospection, isPgRowType },
+      fieldWithHooks,
+    } = context;
+
+    const {
+      parseResolveInfo,
+      pgGetGqlTypeByTypeIdAndModifier,
+      pgGetGqlInputTypeByTypeIdAndModifier,
+      gql2pg,
+      pgSql: sql,
+      graphql: { GraphQLNonNull },
+      inflection,
+      pgQueryFromResolveData: queryFromResolveData,
+      pgOmit: omit,
+      pgPrepareAndRun,
+      federationEntityTypeResolvers,
+    } = build;
+
+    /**
+     * Add to the Entity type if we have a key directive. Done for both internal
+     * and external types
+     */
+    if (
+      objectType &&
+      objectType.astNode &&
+      objectType.astNode.directives &&
+      objectType.astNode.directives.some(
+        (directive: any) => directive.name && directive.name.value === "key"
+      )
+    ) {
+      build.federationEntityTypes.push(Self);
+    }
+
+    if (
+      !(
+        isPgRowType &&
+        pgIntrospection.isSelectable &&
+        pgIntrospection.namespace &&
+        pgIntrospection.primaryKeyConstraint
+      )
+    ) {
+      /* Not a table with a primary key type */
+      return fields;
+    }
+
+    const table = pgIntrospection;
+    const TableType = pgGetGqlTypeByTypeIdAndModifier(table.type.id, null);
+    const sqlFullTableName = sql.identifier(table.namespace.name, table.name);
+
+    if (!TableType) {
+      throw new Error("Unknown Table Type");
+    }
+
+    const constraint = pgIntrospection.primaryKeyConstraint;
+    if (omit(constraint, "read")) {
+      throw new Error(
+        "Cannot resolve reference using a constraint with @omit read"
+      );
+    }
+
+    const keys = constraint.keyAttributes;
+    if (keys.some((key: any) => omit(key, "read"))) {
+      throw new Error(
+        "Cannot resolve reference using a constraint with a key which has @omit read"
+      );
+    }
+
+    if (!keys.every((_: any) => _)) {
+      throw new Error("Consistency error: could not find an attribute!");
+    }
+
+    const keysIncludingMeta = keys.map((key: any) => ({
+      ...key,
+      sqlIdentifier: sql.identifier(key.name),
+      columnName: inflection.column(key),
+    }));
 
     /*
-     * We're going to add the `@key(fields: "nodeId")` directive to this type.
-     * First, we need to generate an `astNode` as if the type was generateted
-     * from a GraphQL SDL initially; then we assign this astNode to to the type
-     * (via type mutation, ick) so that Apollo Federation's `printSchema` can
-     * output it.
+     * We abuse fieldWithHooks here
      */
-    const astNode = {
-      ...ObjectTypeDefinition(spec),
-      ...Self.astNode,
-    };
-    astNode.directives.push(
-      Directive("key", { fields: StringValue(nodeIdFieldName) })
-    );
-    Self.astNode = astNode;
+    federationEntityTypeResolvers[TableType.name] = fieldWithHooks(
+      "_resolveReference",
+      ({ getDataFromParsedResolveInfoFragment }: any) => {
+        return {
+          type: TableType,
+          args: keysIncludingMeta.reduce(
+            (memo: any, { typeId, typeModifier, columnName, name }: any) => {
+              const InputType = pgGetGqlInputTypeByTypeIdAndModifier(
+                typeId,
+                typeModifier
+              );
+              if (!InputType) {
+                throw new Error(
+                  `Could not find input type for key '${name}' on type '${TableType.name}'`
+                );
+              }
+              memo[columnName] = {
+                type: new GraphQLNonNull(InputType),
+              };
+              return memo;
+            },
+            {}
+          ),
+          async resolve(
+            data: any,
+            args: any,
+            resolveContext: any,
+            resolveInfo: any
+          ) {
+            /*
+             * Pretty much the same as PgRowByUniqueConstraint
+             */
+            const { pgClient } = resolveContext;
 
-    // We're not changing the interfaces, so return them unmodified.
-    return interfaces;
+            // Precomputation for performance
+            const queryFromResolveDataOptions = {
+              useAsterisk: false, // Because it's only a single relation, no need
+            };
+
+            const queryFromResolveDataCallback = (
+              queryBuilder: any,
+              args: any
+            ) => {
+              if (subscriptions && table.primaryKeyConstraint) {
+                queryBuilder.selectIdentifiers(table);
+              }
+              const sqlTableAlias = queryBuilder.getTableAlias();
+
+              keysIncludingMeta.forEach(
+                ({ sqlIdentifier, columnName, type, typeModifier }: any) => {
+                  queryBuilder.where(
+                    sql.fragment`${sqlTableAlias}.${sqlIdentifier} = ${gql2pg(
+                      args[columnName],
+                      type,
+                      typeModifier
+                    )}`
+                  );
+                }
+              );
+            };
+
+            const parsedResolveInfoFragment = parseResolveInfo(resolveInfo);
+            const resolveData = getDataFromParsedResolveInfoFragment(
+              parsedResolveInfoFragment,
+              TableType
+            );
+
+            const query = queryFromResolveData(
+              sqlFullTableName,
+              undefined,
+              resolveData,
+              queryFromResolveDataOptions,
+              (queryBuilder: any) =>
+                queryFromResolveDataCallback(queryBuilder, args),
+              resolveContext,
+              resolveInfo.rootValue
+            );
+
+            const { text, values } = sql.compile(query);
+            const {
+              rows: [row],
+            } = await pgPrepareAndRun(pgClient, text, values);
+
+            return row;
+          },
+        };
+      },
+      {}
+    );
+
+    return fields;
   });
 
   // Add our collected types to the _Entity union
@@ -195,6 +555,7 @@ const AddKeyPlugin: Plugin = builder => {
     if (Self.name !== "_Entity") {
       return types;
     }
+
     const { federationEntityTypes } = build;
 
     // Add our types to the entity types
@@ -204,6 +565,9 @@ const AddKeyPlugin: Plugin = builder => {
 
 // Our federation implementation combines these two plugins:
 export default makePluginByCombiningPlugins(
+  BaseFederatedPlugin,
   SchemaExtensionPlugin,
-  AddKeyPlugin
+  ChangeFederatedReturnTypePlugin,
+  FederateExternalTypesPlugin,
+  FederatePgTypesPlugin
 );

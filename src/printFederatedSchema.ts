@@ -8,9 +8,16 @@ import { GraphQLSchema } from "graphql";
 
 /*
  * These are the fields and types that will be stripped from the printed
- * schema.
+ * schema. This includes node/nodeId and query on Query to stop @apollo/gateway
+ * complaining about duplicate types
  */
-const FEDERATION_QUERY_FIELDS = ["_entities", "_service"];
+const FEDERATION_QUERY_FIELDS = [
+  "_entities",
+  "_service",
+  "query",
+  "node",
+  "nodeId",
+];
 const FEDERATION_TYPE_NAMES = ["_Any", "_FieldSet", "_Service"];
 
 // For memoization:
