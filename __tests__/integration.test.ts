@@ -1,5 +1,5 @@
 import federationPlugin from "../src";
-import * as express from "express";
+import * as http from "http";
 import { postgraphile } from "postgraphile";
 import { ApolloGateway } from "@apollo/gateway";
 import { startFederatedServiceExtendingUser } from "./__fixtures__/federatedServiceExtendingUser";
@@ -22,20 +22,23 @@ afterAll(() => {
   }
 });
 
-function startPostgraphile() {
-  if (!pgPool) {
-    throw new Error("pool not ready!");
-  }
-  return express()
-    .use(
+function startPostgraphile(): Promise<http.Server> {
+  return new Promise(resolve => {
+    if (!pgPool) {
+      throw new Error("pool not ready!");
+    }
+    const httpServer = http.createServer(
       postgraphile(pgPool, "graphile_federation", {
         disableDefaultMutations: true,
         appendPlugins: [federationPlugin],
         simpleCollections: "only",
         retryOnInitFail: true,
       })
-    )
-    .listen(0);
+    );
+
+    httpServer.once("listening", () => resolve(httpServer));
+    httpServer.listen({ port: 0, host: "127.0.0.1" });
+  });
 }
 
 function toUrl(
@@ -49,7 +52,7 @@ function toUrl(
 }
 
 test("federated service", async () => {
-  const postgraphileServer = startPostgraphile();
+  const postgraphileServer = await startPostgraphile();
   const serviceExtendingUser = startFederatedServiceExtendingUser();
   let server: ApolloServer | undefined;
 
@@ -61,7 +64,9 @@ test("federated service", async () => {
       },
       {
         name: "serviceExtendingUser",
-        url: toUrl(await serviceExtendingUser.listen(0)),
+        url: toUrl(
+          await serviceExtendingUser.listen({ port: 0, host: "127.0.0.1" })
+        ),
       },
     ];
 
@@ -76,7 +81,7 @@ test("federated service", async () => {
       executor,
     });
 
-    const running = await server.listen(0);
+    const running = await server.listen({ port: 0, host: "127.0.0.1" });
 
     debugger;
     const result = await axios.post(running.url, {
