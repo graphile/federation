@@ -8,8 +8,8 @@ const typeDefs = gql`
     empty: ID
   }
 
-  extend type User @key(fields: "id") {
-    id: Int! @external
+  extend type User @key(fields: "nodeId") {
+    nodeId: ID! @external
     firstName: String! @external
     lastName: String! @external
     fullName: String! @requires(fields: "firstName lastName")

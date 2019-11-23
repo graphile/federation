@@ -1,7 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`schema and _service.sdl: _service.sdl 1`] = `
-"type Email implements Node @key(fields: \\"id\\") @key(fields: \\"nodeId\\") {
+"type Email implements Node @key(fields: \\"nodeId\\") {
   \\"A globally unique identifier. Can be used in various places throughout the system to identify this single value.\\"
   nodeId: ID!
   id: Int!
@@ -111,7 +111,7 @@ type Query {
   ): UsersEmail
 }
 
-type User implements Node @key(fields: \\"id\\") @key(fields: \\"nodeId\\") {
+type User implements Node @key(fields: \\"nodeId\\") {
   \\"A globally unique identifier. Can be used in various places throughout the system to identify this single value.\\"
   nodeId: ID!
   id: Int!
@@ -140,7 +140,7 @@ input UserCondition {
   lastName: String
 }
 
-type UsersEmail implements Node @key(fields: \\"userId emailId\\") @key(fields: \\"nodeId\\") {
+type UsersEmail implements Node @key(fields: \\"nodeId\\") {
   \\"A globally unique identifier. Can be used in various places throughout the system to identify this single value.\\"
   nodeId: ID!
   userId: Int!

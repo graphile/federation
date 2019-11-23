@@ -3,9 +3,10 @@ import * as http from "http";
 import { postgraphile } from "postgraphile";
 import { ApolloGateway } from "@apollo/gateway";
 import { startFederatedServiceExtendingUser } from "./__fixtures__/federatedServiceExtendingUser";
-import { ApolloServer } from "apollo-server";
+import { ApolloServer, ServerInfo } from "apollo-server";
 import * as pg from "pg";
 import axios from "axios";
+import { GraphQLSchema } from "graphql";
 
 let pgPool: pg.Pool | null;
 
@@ -51,9 +52,25 @@ function toUrl(
     : `http://${obj.address}:${obj.port}`;
 }
 
-test("federated service", async () => {
+async function withFederatedExternalServices(
+  startExternalServices: {
+    [serviceName: string]: () => ApolloServer | Promise<ApolloServer>;
+  },
+  cb: (_: { serverInfo: ServerInfo; schema: GraphQLSchema }) => Promise<any>
+) {
   const postgraphileServer = await startPostgraphile();
-  const serviceExtendingUser = startFederatedServiceExtendingUser();
+  const externalServices = await Promise.all(
+    Object.entries(startExternalServices).map(
+      async ([name, serviceBuilder]) => {
+        const service = await serviceBuilder();
+        return {
+          name,
+          service,
+          url: toUrl(await service.listen({ port: 0, host: "127.0.0.1" })),
+        };
+      }
+    )
+  );
   let server: ApolloServer | undefined;
 
   try {
@@ -62,48 +79,55 @@ test("federated service", async () => {
         name: "postgraphile",
         url: toUrl(postgraphileServer.address()!) + "/graphql",
       },
-      {
-        name: "serviceExtendingUser",
-        url: toUrl(
-          await serviceExtendingUser.listen({ port: 0, host: "127.0.0.1" })
-        ),
-      },
+      ...externalServices,
     ];
 
     const { schema, executor } = await new ApolloGateway({
       serviceList,
     }).load();
 
-    expect(schema).toMatchSnapshot("federated schema");
-
     server = new ApolloServer({
       schema,
       executor,
     });
 
-    const running = await server.listen({ port: 0, host: "127.0.0.1" });
+    const serverInfo = await server.listen({ port: 0, host: "127.0.0.1" });
 
-    debugger;
-    const result = await axios.post(running.url, {
-      query: `{ allUsersList(first: 1) { firstName, lastName, fullName} }`,
-    });
-
-    expect(result.data).toMatchObject({
-      data: {
-        allUsersList: [
-          {
-            firstName: "alicia",
-            fullName: "alicia keys",
-            lastName: "keys",
-          },
-        ],
-      },
-    });
+    await cb({ serverInfo, schema });
   } finally {
     await postgraphileServer.close();
-    await serviceExtendingUser.stop();
+    for (const external of externalServices) {
+      await external.service.stop();
+    }
     if (server) {
       await server.stop();
     }
   }
+}
+
+test("federated service", async () => {
+  await withFederatedExternalServices(
+    {
+      serviceExteningUser: startFederatedServiceExtendingUser,
+    },
+    async ({ serverInfo, schema }) => {
+      expect(schema).toMatchSnapshot("federated schema");
+
+      const result = await axios.post(serverInfo.url, {
+        query: `{ allUsersList(first: 1) { firstName, lastName, fullName} }`,
+      });
+
+      expect(result.data).toMatchObject({
+        data: {
+          allUsersList: [
+            {
+              firstName: "alicia",
+              fullName: "alicia keys",
+              lastName: "keys",
+            },
+          ],
+        },
+      });
+    }
+  );
 });
