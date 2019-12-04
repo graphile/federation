@@ -1,5 +1,5 @@
 module.exports = {
-  roots: ["<rootDir>/src"],
+  snapshotSerializers: ["jest-serializer-graphql-schema"],
   transform: {
     "^.+\\.tsx?$": "ts-jest",
   },
