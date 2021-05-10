@@ -9,6 +9,7 @@ env:
   PGHOST: "127.0.0.1"
   PGPORT: 5432
   TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+  TERM: xterm
 
 jobs:
   test:
