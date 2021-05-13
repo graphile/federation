@@ -131,7 +131,7 @@ const SchemaExtensionPlugin = makeExtendSchemaPlugin(build => {
         serialize(value: any) {
           return value;
         },
-      }),
+      }) as any /* work around bug in the TypeScript definitions for makeExtendSchemaPlugin */,
     },
   };
 });
