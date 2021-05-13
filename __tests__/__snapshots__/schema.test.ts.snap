@@ -2,32 +2,43 @@
 
 exports[`schema and _service.sdl: _service.sdl 1`] = `
 "type Email implements Node @key(fields: \\"nodeId\\") {
-  \\"A globally unique identifier. Can be used in various places throughout the system to identify this single value.\\"
+  \\"\\"\\"
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  \\"\\"\\"
   nodeId: ID!
   id: Int!
   email: String!
-  \\"Reads and enables pagination through a set of \`UsersEmail\`.\\"
+
+  \\"\\"\\"Reads and enables pagination through a set of \`UsersEmail\`.\\"\\"\\"
   usersEmailsByEmailIdList(
-    \\"Only read the first \`n\` values of the set.\\"
+    \\"\\"\\"Only read the first \`n\` values of the set.\\"\\"\\"
     first: Int
-    \\"Skip the first \`n\` values.\\"
+
+    \\"\\"\\"Skip the first \`n\` values.\\"\\"\\"
     offset: Int
-    \\"The method to use when ordering \`UsersEmail\`.\\"
+
+    \\"\\"\\"The method to use when ordering \`UsersEmail\`.\\"\\"\\"
     orderBy: [UsersEmailsOrderBy!]
-    \\"A condition to be used in determining which values should be returned by the collection.\\"
+
+    \\"\\"\\"
+    A condition to be used in determining which values should be returned by the collection.
+    \\"\\"\\"
     condition: UsersEmailCondition
   ): [UsersEmail!]!
 }
 
-\\"A condition to be used against \`Email\` object types. All fields are tested for equality and combined with a logical ‘and.’\\"
+\\"\\"\\"
+A condition to be used against \`Email\` object types. All fields are tested for equality and combined with a logical ‘and.’
+\\"\\"\\"
 input EmailCondition {
-  \\"Checks for equality with the object’s \`id\` field.\\"
+  \\"\\"\\"Checks for equality with the object’s \`id\` field.\\"\\"\\"
   id: Int
-  \\"Checks for equality with the object’s \`email\` field.\\"
+
+  \\"\\"\\"Checks for equality with the object’s \`email\` field.\\"\\"\\"
   email: String
 }
 
-\\"Methods to use when ordering \`Email\`.\\"
+\\"\\"\\"Methods to use when ordering \`Email\`.\\"\\"\\"
 enum EmailsOrderBy {
   NATURAL
   ID_ASC
@@ -38,116 +49,161 @@ enum EmailsOrderBy {
   PRIMARY_KEY_DESC
 }
 
-\\"An object with a globally unique \`ID\`.\\"
+\\"\\"\\"An object with a globally unique \`ID\`.\\"\\"\\"
 interface Node {
-  \\"A globally unique identifier. Can be used in various places throughout the system to identify this single value.\\"
+  \\"\\"\\"
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  \\"\\"\\"
   nodeId: ID!
 }
 
-\\"The root query type which gives access points into the data universe.\\"
+\\"\\"\\"The root query type which gives access points into the data universe.\\"\\"\\"
 type Query {
   \\"\\"\\"
   Exposes the root query type nested one level down. This is helpful for Relay 1
   which can only query top level fields if they are in a particular form.
   \\"\\"\\"
   query: Query!
-  \\"The root query type must be a \`Node\` to work well with Relay 1 mutations. This just resolves to \`query\`.\\"
+
+  \\"\\"\\"
+  The root query type must be a \`Node\` to work well with Relay 1 mutations. This just resolves to \`query\`.
+  \\"\\"\\"
   nodeId: ID!
-  \\"Fetches an object given its globally unique \`ID\`.\\"
+
+  \\"\\"\\"Fetches an object given its globally unique \`ID\`.\\"\\"\\"
   node(
-    \\"The globally unique \`ID\`.\\"
+    \\"\\"\\"The globally unique \`ID\`.\\"\\"\\"
     nodeId: ID!
   ): Node
-  \\"Reads a set of \`Email\`.\\"
+
+  \\"\\"\\"Reads a set of \`Email\`.\\"\\"\\"
   allEmailsList(
-    \\"Only read the first \`n\` values of the set.\\"
+    \\"\\"\\"Only read the first \`n\` values of the set.\\"\\"\\"
     first: Int
-    \\"Skip the first \`n\` values.\\"
+
+    \\"\\"\\"Skip the first \`n\` values.\\"\\"\\"
     offset: Int
-    \\"The method to use when ordering \`Email\`.\\"
+
+    \\"\\"\\"The method to use when ordering \`Email\`.\\"\\"\\"
     orderBy: [EmailsOrderBy!]
-    \\"A condition to be used in determining which values should be returned by the collection.\\"
+
+    \\"\\"\\"
+    A condition to be used in determining which values should be returned by the collection.
+    \\"\\"\\"
     condition: EmailCondition
   ): [Email!]
-  \\"Reads a set of \`User\`.\\"
+
+  \\"\\"\\"Reads a set of \`User\`.\\"\\"\\"
   allUsersList(
-    \\"Only read the first \`n\` values of the set.\\"
+    \\"\\"\\"Only read the first \`n\` values of the set.\\"\\"\\"
     first: Int
-    \\"Skip the first \`n\` values.\\"
+
+    \\"\\"\\"Skip the first \`n\` values.\\"\\"\\"
     offset: Int
-    \\"The method to use when ordering \`User\`.\\"
+
+    \\"\\"\\"The method to use when ordering \`User\`.\\"\\"\\"
     orderBy: [UsersOrderBy!]
-    \\"A condition to be used in determining which values should be returned by the collection.\\"
+
+    \\"\\"\\"
+    A condition to be used in determining which values should be returned by the collection.
+    \\"\\"\\"
     condition: UserCondition
   ): [User!]
-  \\"Reads a set of \`UsersEmail\`.\\"
+
+  \\"\\"\\"Reads a set of \`UsersEmail\`.\\"\\"\\"
   allUsersEmailsList(
-    \\"Only read the first \`n\` values of the set.\\"
+    \\"\\"\\"Only read the first \`n\` values of the set.\\"\\"\\"
     first: Int
-    \\"Skip the first \`n\` values.\\"
+
+    \\"\\"\\"Skip the first \`n\` values.\\"\\"\\"
     offset: Int
-    \\"The method to use when ordering \`UsersEmail\`.\\"
+
+    \\"\\"\\"The method to use when ordering \`UsersEmail\`.\\"\\"\\"
     orderBy: [UsersEmailsOrderBy!]
-    \\"A condition to be used in determining which values should be returned by the collection.\\"
+
+    \\"\\"\\"
+    A condition to be used in determining which values should be returned by the collection.
+    \\"\\"\\"
     condition: UsersEmailCondition
   ): [UsersEmail!]
   emailById(id: Int!): Email
   userById(id: Int!): User
   usersEmailByUserIdAndEmailId(userId: Int!, emailId: Int!): UsersEmail
-  \\"Reads a single \`Email\` using its globally unique \`ID\`.\\"
+
+  \\"\\"\\"Reads a single \`Email\` using its globally unique \`ID\`.\\"\\"\\"
   email(
-    \\"The globally unique \`ID\` to be used in selecting a single \`Email\`.\\"
+    \\"\\"\\"The globally unique \`ID\` to be used in selecting a single \`Email\`.\\"\\"\\"
     nodeId: ID!
   ): Email
-  \\"Reads a single \`User\` using its globally unique \`ID\`.\\"
+
+  \\"\\"\\"Reads a single \`User\` using its globally unique \`ID\`.\\"\\"\\"
   user(
-    \\"The globally unique \`ID\` to be used in selecting a single \`User\`.\\"
+    \\"\\"\\"The globally unique \`ID\` to be used in selecting a single \`User\`.\\"\\"\\"
     nodeId: ID!
   ): User
-  \\"Reads a single \`UsersEmail\` using its globally unique \`ID\`.\\"
+
+  \\"\\"\\"Reads a single \`UsersEmail\` using its globally unique \`ID\`.\\"\\"\\"
   usersEmail(
-    \\"The globally unique \`ID\` to be used in selecting a single \`UsersEmail\`.\\"
+    \\"\\"\\"
+    The globally unique \`ID\` to be used in selecting a single \`UsersEmail\`.
+    \\"\\"\\"
     nodeId: ID!
   ): UsersEmail
 }
 
 type User implements Node @key(fields: \\"nodeId\\") {
-  \\"A globally unique identifier. Can be used in various places throughout the system to identify this single value.\\"
+  \\"\\"\\"
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  \\"\\"\\"
   nodeId: ID!
   id: Int!
   firstName: String!
   lastName: String!
-  \\"Reads and enables pagination through a set of \`UsersEmail\`.\\"
+
+  \\"\\"\\"Reads and enables pagination through a set of \`UsersEmail\`.\\"\\"\\"
   usersEmailsByUserIdList(
-    \\"Only read the first \`n\` values of the set.\\"
+    \\"\\"\\"Only read the first \`n\` values of the set.\\"\\"\\"
     first: Int
-    \\"Skip the first \`n\` values.\\"
+
+    \\"\\"\\"Skip the first \`n\` values.\\"\\"\\"
     offset: Int
-    \\"The method to use when ordering \`UsersEmail\`.\\"
+
+    \\"\\"\\"The method to use when ordering \`UsersEmail\`.\\"\\"\\"
     orderBy: [UsersEmailsOrderBy!]
-    \\"A condition to be used in determining which values should be returned by the collection.\\"
+
+    \\"\\"\\"
+    A condition to be used in determining which values should be returned by the collection.
+    \\"\\"\\"
     condition: UsersEmailCondition
   ): [UsersEmail!]!
 }
 
-\\"A condition to be used against \`User\` object types. All fields are tested for equality and combined with a logical ‘and.’\\"
+\\"\\"\\"
+A condition to be used against \`User\` object types. All fields are tested for equality and combined with a logical ‘and.’
+\\"\\"\\"
 input UserCondition {
-  \\"Checks for equality with the object’s \`id\` field.\\"
+  \\"\\"\\"Checks for equality with the object’s \`id\` field.\\"\\"\\"
   id: Int
-  \\"Checks for equality with the object’s \`firstName\` field.\\"
+
+  \\"\\"\\"Checks for equality with the object’s \`firstName\` field.\\"\\"\\"
   firstName: String
-  \\"Checks for equality with the object’s \`lastName\` field.\\"
+
+  \\"\\"\\"Checks for equality with the object’s \`lastName\` field.\\"\\"\\"
   lastName: String
 }
 
 type UsersEmail implements Node @key(fields: \\"nodeId\\") {
-  \\"A globally unique identifier. Can be used in various places throughout the system to identify this single value.\\"
+  \\"\\"\\"
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  \\"\\"\\"
   nodeId: ID!
   userId: Int!
   emailId: Int!
-  \\"Reads a single \`User\` that is related to this \`UsersEmail\`.\\"
+
+  \\"\\"\\"Reads a single \`User\` that is related to this \`UsersEmail\`.\\"\\"\\"
   userByUserId: User
-  \\"Reads a single \`Email\` that is related to this \`UsersEmail\`.\\"
+
+  \\"\\"\\"Reads a single \`Email\` that is related to this \`UsersEmail\`.\\"\\"\\"
   emailByEmailId: Email
 }
 
@@ -156,13 +212,14 @@ A condition to be used against \`UsersEmail\` object types. All fields are teste
 for equality and combined with a logical ‘and.’
 \\"\\"\\"
 input UsersEmailCondition {
-  \\"Checks for equality with the object’s \`userId\` field.\\"
+  \\"\\"\\"Checks for equality with the object’s \`userId\` field.\\"\\"\\"
   userId: Int
-  \\"Checks for equality with the object’s \`emailId\` field.\\"
+
+  \\"\\"\\"Checks for equality with the object’s \`emailId\` field.\\"\\"\\"
   emailId: Int
 }
 
-\\"Methods to use when ordering \`UsersEmail\`.\\"
+\\"\\"\\"Methods to use when ordering \`UsersEmail\`.\\"\\"\\"
 enum UsersEmailsOrderBy {
   NATURAL
   USER_ID_ASC
@@ -173,7 +230,7 @@ enum UsersEmailsOrderBy {
   PRIMARY_KEY_DESC
 }
 
-\\"Methods to use when ordering \`User\`.\\"
+\\"\\"\\"Methods to use when ordering \`User\`.\\"\\"\\"
 enum UsersOrderBy {
   NATURAL
   ID_ASC
@@ -196,83 +253,6 @@ directive @requires(fields: _FieldSet!) on FIELD_DEFINITION
 directive @provides(fields: _FieldSet!) on FIELD_DEFINITION
 
 directive @key(fields: _FieldSet!) on OBJECT | INTERFACE
-
-scalar _Any
-
-"""A union of all federated types (those that use the @key directive)."""
-union _Entity = Email | UsersEmail | User
-
-"""
-Used to represent a set of fields. Grammatically, a field set is a
-selection set minus the braces.
-"""
-scalar _FieldSet
-
-"""Describes our federated service."""
-type _Service {
-  """
-  The GraphQL Schema Language definiton of our endpoint including the
-  Apollo Federation directives (but not their definitions or the special
-  Apollo Federation fields).
-  """
-  sdl: String @deprecated(reason: "Only Apollo Federation should use this")
-}
-
-type Email implements Node {
-  """
-  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
-  """
-  nodeId: ID!
-  id: Int!
-  email: String!
-
-  """Reads and enables pagination through a set of \`UsersEmail\`."""
-  usersEmailsByEmailIdList(
-    """Only read the first \`n\` values of the set."""
-    first: Int
-
-    """Skip the first \`n\` values."""
-    offset: Int
-
-    """The method to use when ordering \`UsersEmail\`."""
-    orderBy: [UsersEmailsOrderBy!]
-
-    """
-    A condition to be used in determining which values should be returned by the collection.
-    """
-    condition: UsersEmailCondition
-  ): [UsersEmail!]!
-}
-
-"""
-A condition to be used against \`Email\` object types. All fields are tested for equality and combined with a logical ‘and.’
-"""
-input EmailCondition {
-  """Checks for equality with the object’s \`id\` field."""
-  id: Int
-
-  """Checks for equality with the object’s \`email\` field."""
-  email: String
-}
-
-"""Methods to use when ordering \`Email\`."""
-enum EmailsOrderBy {
-  NATURAL
-  ID_ASC
-  ID_DESC
-  EMAIL_ASC
-  EMAIL_DESC
-  PRIMARY_KEY_ASC
-  PRIMARY_KEY_DESC
-}
-
-"""An object with a globally unique \`ID\`."""
-interface Node {
-  """
-  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
-  """
-  nodeId: ID!
-}
 
 """The root query type which gives access points into the data universe."""
 type Query implements Node {
@@ -380,6 +360,55 @@ type Query implements Node {
   _service: _Service! @deprecated(reason: "Only Apollo Federation should use this")
 }
 
+"""An object with a globally unique \`ID\`."""
+interface Node {
+  """
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  """
+  nodeId: ID!
+}
+
+type Email implements Node {
+  """
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  """
+  nodeId: ID!
+  id: Int!
+  email: String!
+
+  """Reads and enables pagination through a set of \`UsersEmail\`."""
+  usersEmailsByEmailIdList(
+    """Only read the first \`n\` values of the set."""
+    first: Int
+
+    """Skip the first \`n\` values."""
+    offset: Int
+
+    """The method to use when ordering \`UsersEmail\`."""
+    orderBy: [UsersEmailsOrderBy!]
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: UsersEmailCondition
+  ): [UsersEmail!]!
+}
+
+type UsersEmail implements Node {
+  """
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  """
+  nodeId: ID!
+  userId: Int!
+  emailId: Int!
+
+  """Reads a single \`User\` that is related to this \`UsersEmail\`."""
+  userByUserId: User
+
+  """Reads a single \`Email\` that is related to this \`UsersEmail\`."""
+  emailByEmailId: Email
+}
+
 type User implements Node {
   """
   A globally unique identifier. Can be used in various places throughout the system to identify this single value.
@@ -407,33 +436,15 @@ type User implements Node {
   ): [UsersEmail!]!
 }
 
-"""
-A condition to be used against \`User\` object types. All fields are tested for equality and combined with a logical ‘and.’
-"""
-input UserCondition {
-  """Checks for equality with the object’s \`id\` field."""
-  id: Int
-
-  """Checks for equality with the object’s \`firstName\` field."""
-  firstName: String
-
-  """Checks for equality with the object’s \`lastName\` field."""
-  lastName: String
-}
-
-type UsersEmail implements Node {
-  """
-  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
-  """
-  nodeId: ID!
-  userId: Int!
-  emailId: Int!
-
-  """Reads a single \`User\` that is related to this \`UsersEmail\`."""
-  userByUserId: User
-
-  """Reads a single \`Email\` that is related to this \`UsersEmail\`."""
-  emailByEmailId: Email
+"""Methods to use when ordering \`UsersEmail\`."""
+enum UsersEmailsOrderBy {
+  NATURAL
+  USER_ID_ASC
+  USER_ID_DESC
+  EMAIL_ID_ASC
+  EMAIL_ID_DESC
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
 }
 
 """
@@ -448,15 +459,26 @@ input UsersEmailCondition {
   emailId: Int
 }
 
-"""Methods to use when ordering \`UsersEmail\`."""
-enum UsersEmailsOrderBy {
+"""Methods to use when ordering \`Email\`."""
+enum EmailsOrderBy {
   NATURAL
-  USER_ID_ASC
-  USER_ID_DESC
-  EMAIL_ID_ASC
-  EMAIL_ID_DESC
+  ID_ASC
+  ID_DESC
+  EMAIL_ASC
+  EMAIL_DESC
   PRIMARY_KEY_ASC
   PRIMARY_KEY_DESC
+}
+
+"""
+A condition to be used against \`Email\` object types. All fields are tested for equality and combined with a logical ‘and.’
+"""
+input EmailCondition {
+  """Checks for equality with the object’s \`id\` field."""
+  id: Int
+
+  """Checks for equality with the object’s \`email\` field."""
+  email: String
 }
 
 """Methods to use when ordering \`User\`."""
@@ -471,5 +493,40 @@ enum UsersOrderBy {
   PRIMARY_KEY_ASC
   PRIMARY_KEY_DESC
 }
+
+"""
+A condition to be used against \`User\` object types. All fields are tested for equality and combined with a logical ‘and.’
+"""
+input UserCondition {
+  """Checks for equality with the object’s \`id\` field."""
+  id: Int
+
+  """Checks for equality with the object’s \`firstName\` field."""
+  firstName: String
+
+  """Checks for equality with the object’s \`lastName\` field."""
+  lastName: String
+}
+
+"""A union of all federated types (those that use the @key directive)."""
+union _Entity = Email | UsersEmail | User
+
+scalar _Any
+
+"""Describes our federated service."""
+type _Service {
+  """
+  The GraphQL Schema Language definiton of our endpoint including the
+  Apollo Federation directives (but not their definitions or the special
+  Apollo Federation fields).
+  """
+  sdl: String @deprecated(reason: "Only Apollo Federation should use this")
+}
+
+"""
+Used to represent a set of fields. Grammatically, a field set is a
+selection set minus the braces.
+"""
+scalar _FieldSet
 
 `;
