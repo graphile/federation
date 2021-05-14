@@ -63,9 +63,9 @@ test("schema and _service.sdl", async () => {
   );
 
   expect(errors).toBeUndefined();
-  expect(data._service.sdl).toMatchSnapshot("_service.sdl");
+  expect(data!._service.sdl).toMatchSnapshot("_service.sdl");
 
-  const parsed = gql([data._service.sdl] as any);
+  const parsed = gql([data!._service.sdl] as any);
 
   const emailDefinition = parsed.definitions.find(
     def => def.kind === "ObjectTypeDefinition" && def.name.value === "Email"
