@@ -1,7 +1,7 @@
 import {
   makeExtendSchemaPlugin,
   makePluginByCombiningPlugins,
-  gql,
+  gql
 } from "graphile-utils";
 import { Plugin } from "graphile-build";
 import printFederatedSchema from "./printFederatedSchema";
@@ -202,8 +202,61 @@ const AddKeyPlugin: Plugin = builder => {
   });
 };
 
+/*
+ * This plugin renames Node/PageInfo/query/node/cursor types with `nodeIdFieldName` as a suffix in order to
+ * fix `GraphQLSchemaValidationError: There can be only one type named "Node/PageInfo/query/node/cursor"` error.
+ * This helps Apollo Gateway to consume two or more PostgraphQL services.
+ * 
+ * Only requirement for this to work is to set a unique `nodeIdFieldName` in the options parameter of
+ * createPostGraphQLSchema/postgraphile methods per PostgraphQL service.
+ */
+
+const ApolloGatewayPlugin: Plugin = builder => {
+  builder.hook('inflection', (inflection, build) => {
+    const {
+      options: { nodeIdFieldName },
+    } = build;
+
+    Object.assign(inflection, {
+      builtin(value: string) {
+        if (value == 'Node' || value == 'PageInfo') {
+          return inflection.builtin.call(this, `${value}${nodeIdFieldName}`);
+        } else {
+          return value;
+        }
+      },
+    });
+
+    return inflection;
+  });
+
+  builder.hook('GraphQLObjectType:fields', (fields, build) => {
+    const {
+      options: { nodeIdFieldName },
+    } = build;
+
+    if (fields.query) {
+      fields[`query${nodeIdFieldName}`] = fields.query;
+      delete fields.query;
+    }
+
+    if (fields.node) {
+      fields[`node${nodeIdFieldName}`] = fields.node;
+      delete fields.node;
+    }
+
+    if (fields.cursor) {
+      fields[`cursor${nodeIdFieldName}`] = fields.cursor;
+      delete fields.cursor;
+    }
+
+    return fields;
+  });
+};
+
 // Our federation implementation combines these two plugins:
 export default makePluginByCombiningPlugins(
   SchemaExtensionPlugin,
-  AddKeyPlugin
+  AddKeyPlugin,
+  ApolloGatewayPlugin
 );
