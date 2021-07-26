@@ -205,10 +205,10 @@ const AddKeyPlugin: Plugin = builder => {
 /*
  * This plugin remove query/node/nodeId fields and Node interface from Query type to
  * fix `GraphQLSchemaValidationError: There can be only one type named "query/node/nodeId"` error.
- * This helps Apollo Gateway to consume two or more PostgraphQL services.
+ * This helps Apollo Gateway to consume two or more PostGraphile services.
  */
 
-const ApolloGatewayPlugin: Plugin = builder => {
+const RemoveQueryLegacyFeaturesPlugin: Plugin = builder => {
   builder.hook('GraphQLObjectType:fields', (fields, _, context) => {
     const {
       scope: { isRootQuery },
@@ -229,6 +229,7 @@ const ApolloGatewayPlugin: Plugin = builder => {
     if (!context.scope.isRootQuery) {
       return interfaces;
     }
+    // Delete all interfaces (i.e. the Node interface) from Query.
     return [];
   });
 };
@@ -237,5 +238,5 @@ const ApolloGatewayPlugin: Plugin = builder => {
 export default makePluginByCombiningPlugins(
   SchemaExtensionPlugin,
   AddKeyPlugin,
-  ApolloGatewayPlugin,
+  RemoveQueryLegacyFeaturesPlugin,
 );
