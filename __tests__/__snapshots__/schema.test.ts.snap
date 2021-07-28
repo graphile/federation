@@ -59,23 +59,6 @@ interface Node {
 
 \\"\\"\\"The root query type which gives access points into the data universe.\\"\\"\\"
 type Query {
-  \\"\\"\\"
-  Exposes the root query type nested one level down. This is helpful for Relay 1
-  which can only query top level fields if they are in a particular form.
-  \\"\\"\\"
-  query: Query!
-
-  \\"\\"\\"
-  The root query type must be a \`Node\` to work well with Relay 1 mutations. This just resolves to \`query\`.
-  \\"\\"\\"
-  nodeId: ID!
-
-  \\"\\"\\"Fetches an object given its globally unique \`ID\`.\\"\\"\\"
-  node(
-    \\"\\"\\"The globally unique \`ID\`.\\"\\"\\"
-    nodeId: ID!
-  ): Node
-
   \\"\\"\\"Reads a set of \`Email\`.\\"\\"\\"
   allEmailsList(
     \\"\\"\\"Only read the first \`n\` values of the set.\\"\\"\\"
@@ -255,24 +238,7 @@ directive @provides(fields: _FieldSet!) on FIELD_DEFINITION
 directive @key(fields: _FieldSet!) on OBJECT | INTERFACE
 
 """The root query type which gives access points into the data universe."""
-type Query implements Node {
-  """
-  Exposes the root query type nested one level down. This is helpful for Relay 1
-  which can only query top level fields if they are in a particular form.
-  """
-  query: Query!
-
-  """
-  The root query type must be a \`Node\` to work well with Relay 1 mutations. This just resolves to \`query\`.
-  """
-  nodeId: ID!
-
-  """Fetches an object given its globally unique \`ID\`."""
-  node(
-    """The globally unique \`ID\`."""
-    nodeId: ID!
-  ): Node
-
+type Query {
   """Reads a set of \`Email\`."""
   allEmailsList(
     """Only read the first \`n\` values of the set."""
@@ -360,14 +326,6 @@ type Query implements Node {
   _service: _Service! @deprecated(reason: "Only Apollo Federation should use this")
 }
 
-"""An object with a globally unique \`ID\`."""
-interface Node {
-  """
-  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
-  """
-  nodeId: ID!
-}
-
 type Email implements Node {
   """
   A globally unique identifier. Can be used in various places throughout the system to identify this single value.
@@ -392,6 +350,14 @@ type Email implements Node {
     """
     condition: UsersEmailCondition
   ): [UsersEmail!]!
+}
+
+"""An object with a globally unique \`ID\`."""
+interface Node {
+  """
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  """
+  nodeId: ID!
 }
 
 type UsersEmail implements Node {

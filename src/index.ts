@@ -202,8 +202,41 @@ const AddKeyPlugin: Plugin = builder => {
   });
 };
 
-// Our federation implementation combines these two plugins:
+/*
+ * This plugin remove query/node/nodeId fields and Node interface from Query type to
+ * fix `GraphQLSchemaValidationError: There can be only one type named "query/node/nodeId"` error.
+ * This helps Apollo Gateway to consume two or more PostGraphile services.
+ */
+
+const RemoveQueryLegacyFeaturesPlugin: Plugin = builder => {
+  builder.hook('GraphQLObjectType:fields', (fields, _, context) => {
+    const {
+      scope: { isRootQuery },
+    } = context;
+
+    // Deleting the query, node, nodeId fields from the Query type that are used by
+    // the old relay specification which are not needed for modern GraphQL clients
+    if (isRootQuery) {
+      delete fields.query;
+      delete fields.node;
+      delete fields.nodeId;
+    }
+
+    return fields;
+  });
+
+  builder.hook('GraphQLObjectType:interfaces', (interfaces, _, context) => {
+    if (!context.scope.isRootQuery) {
+      return interfaces;
+    }
+    // Delete all interfaces (i.e. the Node interface) from Query.
+    return [];
+  });
+};
+
+// Our federation implementation combines these plugins:
 export default makePluginByCombiningPlugins(
   SchemaExtensionPlugin,
-  AddKeyPlugin
+  AddKeyPlugin,
+  RemoveQueryLegacyFeaturesPlugin,
 );
