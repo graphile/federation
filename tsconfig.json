@@ -10,9 +10,10 @@
     "sourceMap": true,
     "inlineSourceMap": false,
 
-    "target": "es2017",
+    "target": "es2021",
     "module": "commonjs",
-    "lib": ["es2017", "esnext.asynciterable"],
+    "lib": ["es2021"],
+    "esModuleInterop": true,
 
     "pretty": true,
     "removeComments": false,
