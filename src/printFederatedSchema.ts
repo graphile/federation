@@ -1,9 +1,9 @@
 import { printSchema } from "@apollo/federation";
 import {
-  transformSchema,
+  wrapSchema,
   FilterTypes,
   TransformRootFields,
-} from "graphql-tools";
+} from "@graphql-tools/wrap";
 import { GraphQLSchema } from "graphql";
 
 /*
@@ -39,22 +39,25 @@ export default function printFederatedSchema(schema: GraphQLSchema) {
      * But we need these fields in the schema for resolution to work, so we're
      * removing them from the schema that gets printed only.
      */
-    const schemaSansFederationFields = transformSchema(schema, [
-      // Remove the federation fields:
-      new TransformRootFields((operation, fieldName, _field) => {
-        if (
-          operation === "Query" &&
-          FEDERATION_QUERY_FIELDS.includes(fieldName)
-        ) {
-          // Federation query fields: remove (null).
-          return null;
-        }
-        // No change (undefined).
-        return undefined;
-      }),
-      // Remove the federation types:
-      new FilterTypes(type => !FEDERATION_TYPE_NAMES.includes(type.name)),
-    ]);
+    const schemaSansFederationFields = wrapSchema({
+      schema,
+      transforms: [
+        // Remove the federation fields:
+        new TransformRootFields((operation, fieldName, _field) => {
+          if (
+            operation === "Query" &&
+            FEDERATION_QUERY_FIELDS.includes(fieldName)
+          ) {
+            // Federation query fields: remove (null).
+            return null;
+          }
+          // No change (undefined).
+          return undefined;
+        }),
+        // Remove the federation types:
+        new FilterTypes((type) => !FEDERATION_TYPE_NAMES.includes(type.name)),
+      ],
+    });
 
     // Print the schema, including the federation directives.
     lastPrint = printSchema(schemaSansFederationFields);
