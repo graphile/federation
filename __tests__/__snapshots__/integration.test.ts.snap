@@ -49,12 +49,100 @@ enum EmailsOrderBy {
   PRIMARY_KEY_DESC
 }
 
+type Forum implements Node {
+  """
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  """
+  nodeId: ID!
+  id: Int!
+  title: String!
+
+  """Reads and enables pagination through a set of \`Post\`."""
+  postsByForumIdList(
+    """Only read the first \`n\` values of the set."""
+    first: Int
+
+    """Skip the first \`n\` values."""
+    offset: Int
+
+    """The method to use when ordering \`Post\`."""
+    orderBy: [PostsOrderBy!]
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: PostCondition
+  ): [Post!]!
+}
+
+"""
+A condition to be used against \`Forum\` object types. All fields are tested for equality and combined with a logical ‘and.’
+"""
+input ForumCondition {
+  """Checks for equality with the object’s \`id\` field."""
+  id: Int
+
+  """Checks for equality with the object’s \`title\` field."""
+  title: String
+}
+
+"""Methods to use when ordering \`Forum\`."""
+enum ForumsOrderBy {
+  NATURAL
+  ID_ASC
+  ID_DESC
+  TITLE_ASC
+  TITLE_DESC
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+}
+
 """An object with a globally unique \`ID\`."""
 interface Node {
   """
   A globally unique identifier. Can be used in various places throughout the system to identify this single value.
   """
   nodeId: ID!
+}
+
+type Post implements Node {
+  """
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  """
+  nodeId: ID!
+  id: Int!
+  forumId: Int!
+  body: String!
+
+  """Reads a single \`Forum\` that is related to this \`Post\`."""
+  forumByForumId: Forum
+}
+
+"""
+A condition to be used against \`Post\` object types. All fields are tested for equality and combined with a logical ‘and.’
+"""
+input PostCondition {
+  """Checks for equality with the object’s \`id\` field."""
+  id: Int
+
+  """Checks for equality with the object’s \`forumId\` field."""
+  forumId: Int
+
+  """Checks for equality with the object’s \`body\` field."""
+  body: String
+}
+
+"""Methods to use when ordering \`Post\`."""
+enum PostsOrderBy {
+  NATURAL
+  ID_ASC
+  ID_DESC
+  FORUM_ID_ASC
+  FORUM_ID_DESC
+  BODY_ASC
+  BODY_DESC
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
 }
 
 type Query {
@@ -131,6 +219,54 @@ type Query {
     """
     nodeId: ID!
   ): UsersEmail
+
+  """Reads a set of \`Forum\`."""
+  allForumsList(
+    """Only read the first \`n\` values of the set."""
+    first: Int
+
+    """Skip the first \`n\` values."""
+    offset: Int
+
+    """The method to use when ordering \`Forum\`."""
+    orderBy: [ForumsOrderBy!]
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: ForumCondition
+  ): [Forum!]
+
+  """Reads a set of \`Post\`."""
+  allPostsList(
+    """Only read the first \`n\` values of the set."""
+    first: Int
+
+    """Skip the first \`n\` values."""
+    offset: Int
+
+    """The method to use when ordering \`Post\`."""
+    orderBy: [PostsOrderBy!]
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: PostCondition
+  ): [Post!]
+  forumById(id: Int!): Forum
+  postById(id: Int!): Post
+
+  """Reads a single \`Forum\` using its globally unique \`ID\`."""
+  forum(
+    """The globally unique \`ID\` to be used in selecting a single \`Forum\`."""
+    nodeId: ID!
+  ): Forum
+
+  """Reads a single \`Post\` using its globally unique \`ID\`."""
+  post(
+    """The globally unique \`ID\` to be used in selecting a single \`Post\`."""
+    nodeId: ID!
+  ): Post
   empty: ID
 }
 

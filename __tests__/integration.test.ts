@@ -23,13 +23,15 @@ afterAll(() => {
   }
 });
 
-function startPostgraphile(): Promise<http.Server> {
-  return new Promise(resolve => {
+function startPostgraphile(
+  schema = "graphile_federation"
+): Promise<http.Server> {
+  return new Promise((resolve) => {
     if (!pgPool) {
       throw new Error("pool not ready!");
     }
     const httpServer = http.createServer(
-      postgraphile(pgPool, "graphile_federation", {
+      postgraphile(pgPool, schema, {
         disableDefaultMutations: true,
         appendPlugins: [federationPlugin],
         simpleCollections: "only",
@@ -59,6 +61,7 @@ async function withFederatedExternalServices(
   cb: (_: { serverInfo: ServerInfo; schema: GraphQLSchema }) => Promise<any>
 ) {
   const postgraphileServer = await startPostgraphile();
+  const postgraphileServer2 = await startPostgraphile("graphile_federation2");
   const externalServices = await Promise.all(
     Object.entries(startExternalServices).map(
       async ([name, serviceBuilder]) => {
@@ -79,6 +82,10 @@ async function withFederatedExternalServices(
         name: "postgraphile",
         url: toUrl(postgraphileServer.address()!) + "/graphql",
       },
+      {
+        name: "postgraphile2",
+        url: toUrl(postgraphileServer2.address()!) + "/graphql",
+      },
       ...externalServices,
     ];
 
@@ -96,6 +103,7 @@ async function withFederatedExternalServices(
     await cb({ serverInfo, schema });
   } finally {
     await postgraphileServer.close();
+    await postgraphileServer2.close();
     for (const external of externalServices) {
       await external.service.stop();
     }
@@ -114,7 +122,7 @@ test("federated service", async () => {
       expect(schema).toMatchSnapshot("federated schema");
 
       const result = await axios.post(serverInfo.url, {
-        query: `{ allUsersList(first: 1) { firstName, lastName, fullName} }`,
+        query: `{ allUsersList(first: 1) { firstName, lastName, fullName} allForumsList { id title postsByForumIdList { id body } } }`,
       });
 
       expect(result.data).toMatchObject({
@@ -124,6 +132,23 @@ test("federated service", async () => {
               firstName: "alicia",
               fullName: "alicia keys",
               lastName: "keys",
+            },
+          ],
+          allForumsList: [
+            {
+              id: 1,
+              title: "Cats",
+              postsByForumIdList: [{ id: 1, body: "They are sneaky" }],
+            },
+            {
+              id: 2,
+              title: "Dogs",
+              postsByForumIdList: [{ id: 2, body: "They are loyal" }],
+            },
+            {
+              id: 3,
+              title: "Postgres",
+              postsByForumIdList: [{ id: 3, body: "It's awesome" }],
             },
           ],
         },
