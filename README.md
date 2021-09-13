@@ -36,7 +36,7 @@ This plugin exposes the [Global Object Identification
 Specification](https://facebook.github.io/relay/graphql/objectidentification.htm)
 (i.e. `Node` interface) in a way that's compatible with Apollo Federation.
 
-Requires PostGraphile v4.4.2-rc.0+
+Requires PostGraphile v4.4.2-rc.0+ and a maintained LTS version of Node.
 
 ## Do you need this?
 
