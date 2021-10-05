@@ -12,7 +12,7 @@ let pgPool: pg.Pool | null;
 
 beforeAll(() => {
   pgPool = new pg.Pool({
-    connectionString: process.env.TEST_DATABASE_URL,
+    connectionString: process.env.TEST_DATABASE_URL || 'postgres://user:pass@localhost:5432/db',
   });
 });
 
@@ -23,15 +23,13 @@ afterAll(() => {
   }
 });
 
-function startPostgraphile(
-  schema = "graphile_federation"
-): Promise<http.Server> {
-  return new Promise((resolve) => {
+function startPostgraphile(): Promise<http.Server> {
+  return new Promise(resolve => {
     if (!pgPool) {
       throw new Error("pool not ready!");
     }
     const httpServer = http.createServer(
-      postgraphile(pgPool, schema, {
+      postgraphile(pgPool, "graphile_federation", {
         disableDefaultMutations: true,
         appendPlugins: [federationPlugin],
         simpleCollections: "only",
@@ -61,7 +59,6 @@ async function withFederatedExternalServices(
   cb: (_: { serverInfo: ServerInfo; schema: GraphQLSchema }) => Promise<any>
 ) {
   const postgraphileServer = await startPostgraphile();
-  const postgraphileServer2 = await startPostgraphile("graphile_federation2");
   const externalServices = await Promise.all(
     Object.entries(startExternalServices).map(
       async ([name, serviceBuilder]) => {
@@ -82,10 +79,6 @@ async function withFederatedExternalServices(
         name: "postgraphile",
         url: toUrl(postgraphileServer.address()!) + "/graphql",
       },
-      {
-        name: "postgraphile2",
-        url: toUrl(postgraphileServer2.address()!) + "/graphql",
-      },
       ...externalServices,
     ];
 
@@ -103,7 +96,6 @@ async function withFederatedExternalServices(
     await cb({ serverInfo, schema });
   } finally {
     await postgraphileServer.close();
-    await postgraphileServer2.close();
     for (const external of externalServices) {
       await external.service.stop();
     }
@@ -113,7 +105,7 @@ async function withFederatedExternalServices(
   }
 }
 
-test("federated service", async () => {
+test("non-postgraphile server extends postgraphile type", async () => {
   await withFederatedExternalServices(
     {
       serviceExteningUser: startFederatedServiceExtendingUser,
@@ -122,7 +114,7 @@ test("federated service", async () => {
       expect(schema).toMatchSnapshot("federated schema");
 
       const result = await axios.post(serverInfo.url, {
-        query: `{ allUsersList(first: 1) { firstName, lastName, fullName} allForumsList { id title postsByForumIdList { id body } } }`,
+        query: `{ allUsersList(first: 1) { firstName, lastName, fullName group { name }} }`,
       });
 
       expect(result.data).toMatchObject({
@@ -132,25 +124,60 @@ test("federated service", async () => {
               firstName: "alicia",
               fullName: "alicia keys",
               lastName: "keys",
+              group: {
+                name: 'Group K'
+              }
             },
           ],
-          allForumsList: [
-            {
-              id: 1,
-              title: "Cats",
-              postsByForumIdList: [{ id: 1, body: "They are sneaky" }],
-            },
-            {
-              id: 2,
-              title: "Dogs",
-              postsByForumIdList: [{ id: 2, body: "They are loyal" }],
-            },
-            {
-              id: 3,
-              title: "Postgres",
-              postsByForumIdList: [{ id: 3, body: "It's awesome" }],
-            },
-          ],
+        },
+      });
+    }
+  );
+});
+
+test("non-postgraphile server federates type to postgraphile", async () => {
+  await withFederatedExternalServices(
+    {
+      serviceExteningUser: startFederatedServiceExtendingUser,
+    },
+    async ({ serverInfo, schema }) => {
+      expect(schema).toMatchSnapshot("federated schema");
+
+      const result = await axios.post(serverInfo.url, {
+        query: `{ group(letter: "m") { name users { fullName } } }`,
+      });
+
+      expect(result.data).toMatchObject({
+        data: {
+          group: {
+            name: 'Group M',
+            users: [{
+              fullName: "bob marley",
+            }]
+          },
+        },
+      });
+    }
+  );
+});
+
+test("federating to postgraphile by table primary key", async () => {
+  await withFederatedExternalServices(
+    {
+      serviceExteningUser: startFederatedServiceExtendingUser,
+    },
+    async ({ serverInfo, schema }) => {
+      expect(schema).toMatchSnapshot("federated schema");
+
+      const result = await axios.post(serverInfo.url, {
+        query: `{ federatedEmail(id: 1) { email } }`,
+      });
+
+      expect(result.data).toMatchObject({
+        data: {
+          federatedEmail: {
+            email: 'piano@example.com'
+          }
         },
       });
     }

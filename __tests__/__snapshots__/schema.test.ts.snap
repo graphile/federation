@@ -1,64 +1,19 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`schema and _service.sdl: _service.sdl 1`] = `
-"type Email implements Node @key(fields: \\"nodeId\\") {
+"\\"\\"\\"The root query type which gives access points into the data universe.\\"\\"\\"
+type Query implements Node {
   \\"\\"\\"
-  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
-  \\"\\"\\"
-  nodeId: ID!
-  id: Int!
-  email: String!
-
-  \\"\\"\\"Reads and enables pagination through a set of \`UsersEmail\`.\\"\\"\\"
-  usersEmailsByEmailIdList(
-    \\"\\"\\"Only read the first \`n\` values of the set.\\"\\"\\"
-    first: Int
-
-    \\"\\"\\"Skip the first \`n\` values.\\"\\"\\"
-    offset: Int
-
-    \\"\\"\\"The method to use when ordering \`UsersEmail\`.\\"\\"\\"
-    orderBy: [UsersEmailsOrderBy!]
-
-    \\"\\"\\"
-    A condition to be used in determining which values should be returned by the collection.
-    \\"\\"\\"
-    condition: UsersEmailCondition
-  ): [UsersEmail!]!
-}
-
-\\"\\"\\"
-A condition to be used against \`Email\` object types. All fields are tested for equality and combined with a logical ‘and.’
-\\"\\"\\"
-input EmailCondition {
-  \\"\\"\\"Checks for equality with the object’s \`id\` field.\\"\\"\\"
-  id: Int
-
-  \\"\\"\\"Checks for equality with the object’s \`email\` field.\\"\\"\\"
-  email: String
-}
-
-\\"\\"\\"Methods to use when ordering \`Email\`.\\"\\"\\"
-enum EmailsOrderBy {
-  NATURAL
-  ID_ASC
-  ID_DESC
-  EMAIL_ASC
-  EMAIL_DESC
-  PRIMARY_KEY_ASC
-  PRIMARY_KEY_DESC
-}
-
-\\"\\"\\"An object with a globally unique \`ID\`.\\"\\"\\"
-interface Node {
-  \\"\\"\\"
-  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  The root query type must be a \`Node\` to work well with Relay 1 mutations. This just resolves to \`query\`.
   \\"\\"\\"
   nodeId: ID!
-}
 
-\\"\\"\\"The root query type which gives access points into the data universe.\\"\\"\\"
-type Query {
+  \\"\\"\\"Fetches an object given its globally unique \`ID\`.\\"\\"\\"
+  node(
+    \\"\\"\\"The globally unique \`ID\`.\\"\\"\\"
+    nodeId: ID!
+  ): Node
+
   \\"\\"\\"Reads a set of \`Email\`.\\"\\"\\"
   allEmailsList(
     \\"\\"\\"Only read the first \`n\` values of the set.\\"\\"\\"
@@ -134,7 +89,56 @@ type Query {
   ): UsersEmail
 }
 
-type User implements Node @key(fields: \\"nodeId\\") {
+\\"\\"\\"An object with a globally unique \`ID\`.\\"\\"\\"
+interface Node {
+  \\"\\"\\"
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  \\"\\"\\"
+  nodeId: ID!
+}
+
+type Email implements Node @key(fields: \\"id\\") @key(fields: \\"nodeId\\") {
+  \\"\\"\\"
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  \\"\\"\\"
+  nodeId: ID!
+  id: Int!
+  email: String!
+
+  \\"\\"\\"Reads and enables pagination through a set of \`UsersEmail\`.\\"\\"\\"
+  usersEmailsByEmailIdList(
+    \\"\\"\\"Only read the first \`n\` values of the set.\\"\\"\\"
+    first: Int
+
+    \\"\\"\\"Skip the first \`n\` values.\\"\\"\\"
+    offset: Int
+
+    \\"\\"\\"The method to use when ordering \`UsersEmail\`.\\"\\"\\"
+    orderBy: [UsersEmailsOrderBy!]
+
+    \\"\\"\\"
+    A condition to be used in determining which values should be returned by the collection.
+    \\"\\"\\"
+    condition: UsersEmailCondition
+  ): [UsersEmail!]!
+}
+
+type UsersEmail implements Node @key(fields: \\"userId emailId\\") @key(fields: \\"nodeId\\") {
+  \\"\\"\\"
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  \\"\\"\\"
+  nodeId: ID!
+  userId: Int!
+  emailId: Int!
+
+  \\"\\"\\"Reads a single \`User\` that is related to this \`UsersEmail\`.\\"\\"\\"
+  userByUserId: User
+
+  \\"\\"\\"Reads a single \`Email\` that is related to this \`UsersEmail\`.\\"\\"\\"
+  emailByEmailId: Email
+}
+
+type User implements Node @key(fields: \\"id\\") @key(fields: \\"nodeId\\") {
   \\"\\"\\"
   A globally unique identifier. Can be used in various places throughout the system to identify this single value.
   \\"\\"\\"
@@ -161,33 +165,15 @@ type User implements Node @key(fields: \\"nodeId\\") {
   ): [UsersEmail!]!
 }
 
-\\"\\"\\"
-A condition to be used against \`User\` object types. All fields are tested for equality and combined with a logical ‘and.’
-\\"\\"\\"
-input UserCondition {
-  \\"\\"\\"Checks for equality with the object’s \`id\` field.\\"\\"\\"
-  id: Int
-
-  \\"\\"\\"Checks for equality with the object’s \`firstName\` field.\\"\\"\\"
-  firstName: String
-
-  \\"\\"\\"Checks for equality with the object’s \`lastName\` field.\\"\\"\\"
-  lastName: String
-}
-
-type UsersEmail implements Node @key(fields: \\"nodeId\\") {
-  \\"\\"\\"
-  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
-  \\"\\"\\"
-  nodeId: ID!
-  userId: Int!
-  emailId: Int!
-
-  \\"\\"\\"Reads a single \`User\` that is related to this \`UsersEmail\`.\\"\\"\\"
-  userByUserId: User
-
-  \\"\\"\\"Reads a single \`Email\` that is related to this \`UsersEmail\`.\\"\\"\\"
-  emailByEmailId: Email
+\\"\\"\\"Methods to use when ordering \`UsersEmail\`.\\"\\"\\"
+enum UsersEmailsOrderBy {
+  NATURAL
+  USER_ID_ASC
+  USER_ID_DESC
+  EMAIL_ID_ASC
+  EMAIL_ID_DESC
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
 }
 
 \\"\\"\\"
@@ -202,15 +188,26 @@ input UsersEmailCondition {
   emailId: Int
 }
 
-\\"\\"\\"Methods to use when ordering \`UsersEmail\`.\\"\\"\\"
-enum UsersEmailsOrderBy {
+\\"\\"\\"Methods to use when ordering \`Email\`.\\"\\"\\"
+enum EmailsOrderBy {
   NATURAL
-  USER_ID_ASC
-  USER_ID_DESC
-  EMAIL_ID_ASC
-  EMAIL_ID_DESC
+  ID_ASC
+  ID_DESC
+  EMAIL_ASC
+  EMAIL_DESC
   PRIMARY_KEY_ASC
   PRIMARY_KEY_DESC
+}
+
+\\"\\"\\"
+A condition to be used against \`Email\` object types. All fields are tested for equality and combined with a logical ‘and.’
+\\"\\"\\"
+input EmailCondition {
+  \\"\\"\\"Checks for equality with the object’s \`id\` field.\\"\\"\\"
+  id: Int
+
+  \\"\\"\\"Checks for equality with the object’s \`email\` field.\\"\\"\\"
+  email: String
 }
 
 \\"\\"\\"Methods to use when ordering \`User\`.\\"\\"\\"
@@ -225,10 +222,26 @@ enum UsersOrderBy {
   PRIMARY_KEY_ASC
   PRIMARY_KEY_DESC
 }
+
+\\"\\"\\"
+A condition to be used against \`User\` object types. All fields are tested for equality and combined with a logical ‘and.’
+\\"\\"\\"
+input UserCondition {
+  \\"\\"\\"Checks for equality with the object’s \`id\` field.\\"\\"\\"
+  id: Int
+
+  \\"\\"\\"Checks for equality with the object’s \`firstName\` field.\\"\\"\\"
+  firstName: String
+
+  \\"\\"\\"Checks for equality with the object’s \`lastName\` field.\\"\\"\\"
+  lastName: String
+}
 "
 `;
 
 exports[`schema and _service.sdl: external schema 1`] = `
+directive @extends on OBJECT | INTERFACE
+
 directive @external on FIELD_DEFINITION
 
 directive @requires(fields: _FieldSet!) on FIELD_DEFINITION
@@ -238,7 +251,18 @@ directive @provides(fields: _FieldSet!) on FIELD_DEFINITION
 directive @key(fields: _FieldSet!) on OBJECT | INTERFACE
 
 """The root query type which gives access points into the data universe."""
-type Query {
+type Query implements Node {
+  """
+  The root query type must be a \`Node\` to work well with Relay 1 mutations. This just resolves to \`query\`.
+  """
+  nodeId: ID!
+
+  """Fetches an object given its globally unique \`ID\`."""
+  node(
+    """The globally unique \`ID\`."""
+    nodeId: ID!
+  ): Node
+
   """Reads a set of \`Email\`."""
   allEmailsList(
     """Only read the first \`n\` values of the set."""
@@ -326,6 +350,14 @@ type Query {
   _service: _Service! @deprecated(reason: "Only Apollo Federation should use this")
 }
 
+"""An object with a globally unique \`ID\`."""
+interface Node {
+  """
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  """
+  nodeId: ID!
+}
+
 type Email implements Node {
   """
   A globally unique identifier. Can be used in various places throughout the system to identify this single value.
@@ -350,14 +382,6 @@ type Email implements Node {
     """
     condition: UsersEmailCondition
   ): [UsersEmail!]!
-}
-
-"""An object with a globally unique \`ID\`."""
-interface Node {
-  """
-  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
-  """
-  nodeId: ID!
 }
 
 type UsersEmail implements Node {
@@ -482,7 +506,7 @@ scalar _Any
 """Describes our federated service."""
 type _Service {
   """
-  The GraphQL Schema Language definiton of our endpoint including the
+  The GraphQL Schema Language definition of our endpoint including the
   Apollo Federation directives (but not their definitions or the special
   Apollo Federation fields).
   """

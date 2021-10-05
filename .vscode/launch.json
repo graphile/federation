@@ -7,6 +7,18 @@
       "program": "${workspaceFolder}/node_modules/.bin/jest",
       "args": ["--runInBand"],
       "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "debug current file",
+      "program": "${workspaceFolder}/node_modules/.bin/jest",
+      "console": "integratedTerminal",
+      "args": [
+        "--runInBand",
+        "${fileBasename}"
+      ],
+      "envFile": "${workspaceFolder}/.env"
     }
   ]
 }

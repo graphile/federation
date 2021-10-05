@@ -1,9 +1,5 @@
 import { printSchema } from "@apollo/federation";
-import {
-  wrapSchema,
-  FilterTypes,
-  TransformRootFields,
-} from "@graphql-tools/wrap";
+import { FilterTypes, TransformRootFields, wrapSchema } from "@graphql-tools/wrap";
 import { GraphQLSchema } from "graphql";
 
 /*
@@ -14,7 +10,7 @@ const FEDERATION_QUERY_FIELDS = ["_entities", "_service"];
 const FEDERATION_TYPE_NAMES = ["_Any", "_FieldSet", "_Service"];
 
 // For memoization:
-let lastSchema: any;
+let lastSchema: unknown;
 let lastPrint: string;
 
 /**
@@ -26,7 +22,7 @@ let lastPrint: string;
  * We've added simple memoization for performance reasons; better memoization
  * may be needed if you're dealing with multiple concurrent GraphQL schemas.
  */
-export default function printFederatedSchema(schema: GraphQLSchema) {
+export default function printFederatedSchema(schema: GraphQLSchema): string {
   // If the schema is new or has changed, recalculate.
   if (schema !== lastSchema) {
     lastSchema = schema;

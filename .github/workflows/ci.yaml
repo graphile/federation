@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: "ci-${{ github.ref }}"
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set Node version
+        run: echo "NODE_VERSION=$(cat .nvmrc)" > $GITHUB_ENV
+      - uses: actions/setup-node@v2
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: Install package
+        run: npm install
+      - name: Run linters
+        run: npm run lint -- --no-fix
+      - name: Start integration services
+        run: |
+          docker-compose up -d
+          python3 -m pip install docker-compose-wait && docker-compose-wait
+      - name: Run integration tests
+        run: npm run test
+      - name: Stop integration services
+        if: always()
+        run: docker-compose down

@@ -12,7 +12,7 @@ let pgPool: pg.Pool | null;
 
 beforeAll(() => {
   pgPool = new pg.Pool({
-    connectionString: process.env.TEST_DATABASE_URL,
+    connectionString: process.env.TEST_DATABASE_URL || 'postgres://user:pass@localhost:5432/db',
   });
 });
 
