@@ -6,10 +6,12 @@
       "name": "debug tests",
       "program": "${workspaceFolder}/node_modules/.bin/jest",
       "args": ["--runInBand"],
+      "runtimeVersion": "16.10.0",
       "envFile": "${workspaceFolder}/.env"
     },
     {
       "type": "node",
+      "runtimeVersion": "16.10.0",
       "request": "launch",
       "name": "debug current file",
       "program": "${workspaceFolder}/node_modules/.bin/jest",

@@ -50,6 +50,55 @@ enum EmailsOrderBy {
   PRIMARY_KEY_DESC
 }
 
+type Forum implements Node {
+  id: Int!
+
+  """
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  """
+  nodeId: ID!
+
+  """Reads and enables pagination through a set of \`Post\`."""
+  postsByForumIdList(
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: PostCondition
+
+    """Only read the first \`n\` values of the set."""
+    first: Int
+
+    """Skip the first \`n\` values."""
+    offset: Int
+
+    """The method to use when ordering \`Post\`."""
+    orderBy: [PostsOrderBy!]
+  ): [Post!]!
+  title: String!
+}
+
+"""
+A condition to be used against \`Forum\` object types. All fields are tested for equality and combined with a logical ‘and.’
+"""
+input ForumCondition {
+  """Checks for equality with the object’s \`id\` field."""
+  id: Int
+
+  """Checks for equality with the object’s \`title\` field."""
+  title: String
+}
+
+"""Methods to use when ordering \`Forum\`."""
+enum ForumsOrderBy {
+  ID_ASC
+  ID_DESC
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+  TITLE_ASC
+  TITLE_DESC
+}
+
 type Group {
   name: String!
   users: [User]
@@ -63,7 +112,48 @@ interface Node {
   nodeId: ID!
 }
 
-type Query implements Node {
+type Post implements Node {
+  body: String!
+
+  """Reads a single \`Forum\` that is related to this \`Post\`."""
+  forumByForumId: Forum
+  forumId: Int!
+  id: Int!
+
+  """
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  """
+  nodeId: ID!
+}
+
+"""
+A condition to be used against \`Post\` object types. All fields are tested for equality and combined with a logical ‘and.’
+"""
+input PostCondition {
+  """Checks for equality with the object’s \`body\` field."""
+  body: String
+
+  """Checks for equality with the object’s \`forumId\` field."""
+  forumId: Int
+
+  """Checks for equality with the object’s \`id\` field."""
+  id: Int
+}
+
+"""Methods to use when ordering \`Post\`."""
+enum PostsOrderBy {
+  BODY_ASC
+  BODY_DESC
+  FORUM_ID_ASC
+  FORUM_ID_DESC
+  ID_ASC
+  ID_DESC
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+}
+
+type Query {
   """Reads a set of \`Email\`."""
   allEmailsList(
     """
@@ -80,6 +170,40 @@ type Query implements Node {
     """The method to use when ordering \`Email\`."""
     orderBy: [EmailsOrderBy!]
   ): [Email!]
+
+  """Reads a set of \`Forum\`."""
+  allForumsList(
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: ForumCondition
+
+    """Only read the first \`n\` values of the set."""
+    first: Int
+
+    """Skip the first \`n\` values."""
+    offset: Int
+
+    """The method to use when ordering \`Forum\`."""
+    orderBy: [ForumsOrderBy!]
+  ): [Forum!]
+
+  """Reads a set of \`Post\`."""
+  allPostsList(
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: PostCondition
+
+    """Only read the first \`n\` values of the set."""
+    first: Int
+
+    """Skip the first \`n\` values."""
+    offset: Int
+
+    """The method to use when ordering \`Post\`."""
+    orderBy: [PostsOrderBy!]
+  ): [Post!]
 
   """Reads a set of \`UsersEmail\`."""
   allUsersEmailsList(
@@ -123,18 +247,21 @@ type Query implements Node {
   emailById(id: Int!): Email
   empty: ID
   federatedEmail(id: Int!): Email
+
+  """Reads a single \`Forum\` using its globally unique \`ID\`."""
+  forum(
+    """The globally unique \`ID\` to be used in selecting a single \`Forum\`."""
+    nodeId: ID!
+  ): Forum
+  forumById(id: Int!): Forum
   group(letter: String!): Group
 
-  """Fetches an object given its globally unique \`ID\`."""
-  node(
-    """The globally unique \`ID\`."""
+  """Reads a single \`Post\` using its globally unique \`ID\`."""
+  post(
+    """The globally unique \`ID\` to be used in selecting a single \`Post\`."""
     nodeId: ID!
-  ): Node
-
-  """
-  The root query type must be a \`Node\` to work well with Relay 1 mutations. This just resolves to \`query\`.
-  """
-  nodeId: ID!
+  ): Post
+  postById(id: Int!): Post
 
   """Reads a single \`User\` using its globally unique \`ID\`."""
   user(
@@ -300,6 +427,55 @@ enum EmailsOrderBy {
   PRIMARY_KEY_DESC
 }
 
+type Forum implements Node {
+  id: Int!
+
+  """
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  """
+  nodeId: ID!
+
+  """Reads and enables pagination through a set of \`Post\`."""
+  postsByForumIdList(
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: PostCondition
+
+    """Only read the first \`n\` values of the set."""
+    first: Int
+
+    """Skip the first \`n\` values."""
+    offset: Int
+
+    """The method to use when ordering \`Post\`."""
+    orderBy: [PostsOrderBy!]
+  ): [Post!]!
+  title: String!
+}
+
+"""
+A condition to be used against \`Forum\` object types. All fields are tested for equality and combined with a logical ‘and.’
+"""
+input ForumCondition {
+  """Checks for equality with the object’s \`id\` field."""
+  id: Int
+
+  """Checks for equality with the object’s \`title\` field."""
+  title: String
+}
+
+"""Methods to use when ordering \`Forum\`."""
+enum ForumsOrderBy {
+  ID_ASC
+  ID_DESC
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+  TITLE_ASC
+  TITLE_DESC
+}
+
 type Group {
   name: String!
   users: [User]
@@ -313,7 +489,48 @@ interface Node {
   nodeId: ID!
 }
 
-type Query implements Node {
+type Post implements Node {
+  body: String!
+
+  """Reads a single \`Forum\` that is related to this \`Post\`."""
+  forumByForumId: Forum
+  forumId: Int!
+  id: Int!
+
+  """
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  """
+  nodeId: ID!
+}
+
+"""
+A condition to be used against \`Post\` object types. All fields are tested for equality and combined with a logical ‘and.’
+"""
+input PostCondition {
+  """Checks for equality with the object’s \`body\` field."""
+  body: String
+
+  """Checks for equality with the object’s \`forumId\` field."""
+  forumId: Int
+
+  """Checks for equality with the object’s \`id\` field."""
+  id: Int
+}
+
+"""Methods to use when ordering \`Post\`."""
+enum PostsOrderBy {
+  BODY_ASC
+  BODY_DESC
+  FORUM_ID_ASC
+  FORUM_ID_DESC
+  ID_ASC
+  ID_DESC
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+}
+
+type Query {
   """Reads a set of \`Email\`."""
   allEmailsList(
     """
@@ -330,6 +547,40 @@ type Query implements Node {
     """The method to use when ordering \`Email\`."""
     orderBy: [EmailsOrderBy!]
   ): [Email!]
+
+  """Reads a set of \`Forum\`."""
+  allForumsList(
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: ForumCondition
+
+    """Only read the first \`n\` values of the set."""
+    first: Int
+
+    """Skip the first \`n\` values."""
+    offset: Int
+
+    """The method to use when ordering \`Forum\`."""
+    orderBy: [ForumsOrderBy!]
+  ): [Forum!]
+
+  """Reads a set of \`Post\`."""
+  allPostsList(
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: PostCondition
+
+    """Only read the first \`n\` values of the set."""
+    first: Int
+
+    """Skip the first \`n\` values."""
+    offset: Int
+
+    """The method to use when ordering \`Post\`."""
+    orderBy: [PostsOrderBy!]
+  ): [Post!]
 
   """Reads a set of \`UsersEmail\`."""
   allUsersEmailsList(
@@ -373,18 +624,21 @@ type Query implements Node {
   emailById(id: Int!): Email
   empty: ID
   federatedEmail(id: Int!): Email
+
+  """Reads a single \`Forum\` using its globally unique \`ID\`."""
+  forum(
+    """The globally unique \`ID\` to be used in selecting a single \`Forum\`."""
+    nodeId: ID!
+  ): Forum
+  forumById(id: Int!): Forum
   group(letter: String!): Group
 
-  """Fetches an object given its globally unique \`ID\`."""
-  node(
-    """The globally unique \`ID\`."""
+  """Reads a single \`Post\` using its globally unique \`ID\`."""
+  post(
+    """The globally unique \`ID\` to be used in selecting a single \`Post\`."""
     nodeId: ID!
-  ): Node
-
-  """
-  The root query type must be a \`Node\` to work well with Relay 1 mutations. This just resolves to \`query\`.
-  """
-  nodeId: ID!
+  ): Post
+  postById(id: Int!): Post
 
   """Reads a single \`User\` using its globally unique \`ID\`."""
   user(
@@ -550,6 +804,55 @@ enum EmailsOrderBy {
   PRIMARY_KEY_DESC
 }
 
+type Forum implements Node {
+  id: Int!
+
+  """
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  """
+  nodeId: ID!
+
+  """Reads and enables pagination through a set of \`Post\`."""
+  postsByForumIdList(
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: PostCondition
+
+    """Only read the first \`n\` values of the set."""
+    first: Int
+
+    """Skip the first \`n\` values."""
+    offset: Int
+
+    """The method to use when ordering \`Post\`."""
+    orderBy: [PostsOrderBy!]
+  ): [Post!]!
+  title: String!
+}
+
+"""
+A condition to be used against \`Forum\` object types. All fields are tested for equality and combined with a logical ‘and.’
+"""
+input ForumCondition {
+  """Checks for equality with the object’s \`id\` field."""
+  id: Int
+
+  """Checks for equality with the object’s \`title\` field."""
+  title: String
+}
+
+"""Methods to use when ordering \`Forum\`."""
+enum ForumsOrderBy {
+  ID_ASC
+  ID_DESC
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+  TITLE_ASC
+  TITLE_DESC
+}
+
 type Group {
   name: String!
   users: [User]
@@ -563,7 +866,48 @@ interface Node {
   nodeId: ID!
 }
 
-type Query implements Node {
+type Post implements Node {
+  body: String!
+
+  """Reads a single \`Forum\` that is related to this \`Post\`."""
+  forumByForumId: Forum
+  forumId: Int!
+  id: Int!
+
+  """
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  """
+  nodeId: ID!
+}
+
+"""
+A condition to be used against \`Post\` object types. All fields are tested for equality and combined with a logical ‘and.’
+"""
+input PostCondition {
+  """Checks for equality with the object’s \`body\` field."""
+  body: String
+
+  """Checks for equality with the object’s \`forumId\` field."""
+  forumId: Int
+
+  """Checks for equality with the object’s \`id\` field."""
+  id: Int
+}
+
+"""Methods to use when ordering \`Post\`."""
+enum PostsOrderBy {
+  BODY_ASC
+  BODY_DESC
+  FORUM_ID_ASC
+  FORUM_ID_DESC
+  ID_ASC
+  ID_DESC
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+}
+
+type Query {
   """Reads a set of \`Email\`."""
   allEmailsList(
     """
@@ -580,6 +924,40 @@ type Query implements Node {
     """The method to use when ordering \`Email\`."""
     orderBy: [EmailsOrderBy!]
   ): [Email!]
+
+  """Reads a set of \`Forum\`."""
+  allForumsList(
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: ForumCondition
+
+    """Only read the first \`n\` values of the set."""
+    first: Int
+
+    """Skip the first \`n\` values."""
+    offset: Int
+
+    """The method to use when ordering \`Forum\`."""
+    orderBy: [ForumsOrderBy!]
+  ): [Forum!]
+
+  """Reads a set of \`Post\`."""
+  allPostsList(
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: PostCondition
+
+    """Only read the first \`n\` values of the set."""
+    first: Int
+
+    """Skip the first \`n\` values."""
+    offset: Int
+
+    """The method to use when ordering \`Post\`."""
+    orderBy: [PostsOrderBy!]
+  ): [Post!]
 
   """Reads a set of \`UsersEmail\`."""
   allUsersEmailsList(
@@ -623,18 +1001,21 @@ type Query implements Node {
   emailById(id: Int!): Email
   empty: ID
   federatedEmail(id: Int!): Email
+
+  """Reads a single \`Forum\` using its globally unique \`ID\`."""
+  forum(
+    """The globally unique \`ID\` to be used in selecting a single \`Forum\`."""
+    nodeId: ID!
+  ): Forum
+  forumById(id: Int!): Forum
   group(letter: String!): Group
 
-  """Fetches an object given its globally unique \`ID\`."""
-  node(
-    """The globally unique \`ID\`."""
+  """Reads a single \`Post\` using its globally unique \`ID\`."""
+  post(
+    """The globally unique \`ID\` to be used in selecting a single \`Post\`."""
     nodeId: ID!
-  ): Node
-
-  """
-  The root query type must be a \`Node\` to work well with Relay 1 mutations. This just resolves to \`query\`.
-  """
-  nodeId: ID!
+  ): Post
+  postById(id: Int!): Post
 
   """Reads a single \`User\` using its globally unique \`ID\`."""
   user(
