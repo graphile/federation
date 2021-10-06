@@ -2,10 +2,16 @@
 
 Apollo federation support for PostGraphile (or any Graphile Engine schema).
 
+**NOTE:**
+
+This repository is forked from https://github.com/graphile/federation which is currently unmaintained. While this repository will not be in active development with new features, all contributions and pull requests are welcome and will be reviewed in a timely manner.
+
+Maintaining this fork was a preference from the original owners of the federation repository [See Issue 39](https://github.com/graphile/federation/issues/39).
+
 ## Installation
 
 ```
-yarn add postgraphile @graphile/federation
+npm install postgraphile @graphile/federation
 ```
 
 ## CLI usage
