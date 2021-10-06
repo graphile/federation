@@ -1,6 +1,6 @@
 {
   "name": "postgraphile-federation-plugin",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Apollo Federation support for Graphile Engine",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
