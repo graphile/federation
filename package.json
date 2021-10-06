@@ -1,5 +1,5 @@
 {
-  "name": "postgraphile-apollo-federation-plugin",
+  "name": "postgraphile-federation-plugin",
   "version": "0.3.0",
   "description": "Apollo Federation support for Graphile Engine",
   "main": "./dist/index.js",
@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jarvisuser90/postgraphile-apollo-federation-plugin.git"
+    "url": "git+https://github.com/mgagliardo91/postgraphile-federation-plugin.git"
   },
   "keywords": [
     "apollo",
@@ -27,12 +27,12 @@
     "pg",
     "postgresql"
   ],
-  "author": "John Ciprian",
+  "author": "Michael Gagliardo",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/jarvisuser90/postgraphile-apollo-federation-plugin/issues"
+    "url": "https://github.com/mgagliardo91/postgraphile-federation-plugin/issues"
   },
-  "homepage": "https://github.com/jarvisuser90/postgraphile-apollo-federation-plugin#readme",
+  "homepage": "https://github.com/mgagliardo91/postgraphile-federation-plugin#readme",
   "dependencies": {
     "@apollo/federation": "^0.33.0",
     "graphql": "^15.6.1",
