@@ -3,16 +3,16 @@
     "preserveWatchOutput": true,
 
     "rootDir": "src",
-    "outDir": "build",
+    "outDir": "dist",
     "declaration": true,
-    "declarationDir": "./build",
+    "declarationDir": "./dist",
     "allowJs": false,
     "sourceMap": true,
     "inlineSourceMap": false,
 
-    "target": "es2021",
+    "target": "es2017",
     "module": "commonjs",
-    "lib": ["es2021"],
+    "lib": ["es2017", "esnext.asynciterable"],
     "esModuleInterop": true,
 
     "pretty": true,
@@ -30,11 +30,6 @@
     "noUnusedParameters": false,
     "noUnusedLocals": false
   },
-  "exclude": [
-    "node_modules",
-    "build",
-    "build-turbo",
-    "__tests__",
-    "**/__tests__"
-  ]
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "__tests__", "**/__tests__"]
 }

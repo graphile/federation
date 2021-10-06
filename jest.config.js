@@ -1,5 +1,4 @@
 module.exports = {
-  testEnvironment: "node",
   snapshotSerializers: ["jest-serializer-graphql-schema"],
   transform: {
     "^.+\\.tsx?$": "ts-jest",

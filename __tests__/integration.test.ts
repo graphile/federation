@@ -12,7 +12,7 @@ let pgPool: pg.Pool | null;
 
 beforeAll(() => {
   pgPool = new pg.Pool({
-    connectionString: process.env.TEST_DATABASE_URL,
+    connectionString: process.env.TEST_DATABASE_URL || 'postgres://user:pass@localhost:5432/db',
   });
 });
 
@@ -23,10 +23,8 @@ afterAll(() => {
   }
 });
 
-function startPostgraphile(
-  schema = "graphile_federation"
-): Promise<http.Server> {
-  return new Promise((resolve) => {
+function startPostgraphile(schema = "graphile_federation"): Promise<http.Server> {
+  return new Promise(resolve => {
     if (!pgPool) {
       throw new Error("pool not ready!");
     }
@@ -113,7 +111,7 @@ async function withFederatedExternalServices(
   }
 }
 
-test("federated service", async () => {
+test("non-postgraphile server extends postgraphile type", async () => {
   await withFederatedExternalServices(
     {
       serviceExteningUser: startFederatedServiceExtendingUser,
@@ -122,7 +120,7 @@ test("federated service", async () => {
       expect(schema).toMatchSnapshot("federated schema");
 
       const result = await axios.post(serverInfo.url, {
-        query: `{ allUsersList(first: 1) { firstName, lastName, fullName} allForumsList { id title postsByForumIdList { id body } } }`,
+        query: `{ allUsersList(first: 1) { firstName, lastName, fullName group { name } } allForumsList { id title postsByForumIdList { id body } } }`,
       });
 
       expect(result.data).toMatchObject({
@@ -132,6 +130,9 @@ test("federated service", async () => {
               firstName: "alicia",
               fullName: "alicia keys",
               lastName: "keys",
+              group: {
+                name: 'Group K'
+              }
             },
           ],
           allForumsList: [
@@ -150,7 +151,56 @@ test("federated service", async () => {
               title: "Postgres",
               postsByForumIdList: [{ id: 3, body: "It's awesome" }],
             },
-          ],
+          ]
+        },
+      });
+    }
+  );
+});
+
+test("non-postgraphile server federates type to postgraphile", async () => {
+  await withFederatedExternalServices(
+    {
+      serviceExteningUser: startFederatedServiceExtendingUser,
+    },
+    async ({ serverInfo, schema }) => {
+      expect(schema).toMatchSnapshot("federated schema");
+
+      const result = await axios.post(serverInfo.url, {
+        query: `{ group(letter: "m") { name users { fullName } } }`,
+      });
+
+      expect(result.data).toMatchObject({
+        data: {
+          group: {
+            name: 'Group M',
+            users: [{
+              fullName: "bob marley",
+            }]
+          },
+        },
+      });
+    }
+  );
+});
+
+test("federating to postgraphile by table primary key", async () => {
+  await withFederatedExternalServices(
+    {
+      serviceExteningUser: startFederatedServiceExtendingUser,
+    },
+    async ({ serverInfo, schema }) => {
+      expect(schema).toMatchSnapshot("federated schema");
+
+      const result = await axios.post(serverInfo.url, {
+        query: `{ federatedEmail(id: 1) { email } }`,
+      });
+
+      expect(result.data).toMatchObject({
+        data: {
+          federatedEmail: {
+            email: 'piano@example.com'
+          }
         },
       });
     }

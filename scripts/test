@@ -20,5 +20,5 @@ clear
 echo "Database reset successfully ✅"
 
 # Now run the tests
-jest -i $@
+./node_modules/.bin/jest -i $@
 
