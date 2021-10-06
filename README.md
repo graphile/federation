@@ -1,5 +1,9 @@
 # @graphile/federation
 
+[![Package on npm](https://img.shields.io/npm/v/postgraphile-federation-plugin.svg?style=flat)](https://www.npmjs.com/package/postgraphile-federation-plugin)
+![MIT license](https://img.shields.io/npm/l/postgraphile-federation-plugin.svg)
+[![CI](https://github.com/mgagliardo91/postgraphile-federation-plugin/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/mgagliardo91/postgraphile-federation-plugin/actions/workflows/ci.yaml)
+
 Apollo federation support for PostGraphile (or any Graphile Engine schema).
 
 **NOTE:**
