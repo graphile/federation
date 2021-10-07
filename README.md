@@ -1,3 +1,14 @@
+# UNMAINTAINED
+
+This plugin is currently unmaintained whilst we focus on development of
+PostGraphile version 5. There are community forks that you may wish to check
+out:
+
+- [mgagliardo91/postgraphile-federation-plugin](https://github.com/mgagliardo91/postgraphile-federation-plugin)
+
+To add your fork to the list (or describe what sets it apart) please send a
+PR to this file.
+
 # @graphile/federation
 
 Apollo federation support for PostGraphile (or any Graphile Engine schema).
