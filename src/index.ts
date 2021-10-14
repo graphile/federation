@@ -25,17 +25,6 @@ export type GraphQLReferenceResolver<TContext> = (
   info: GraphQLResolveInfo,
 ) => unknown;
 
-declare module "graphql/type/definition" {
-  interface GraphQLObjectType {
-    resolveReference?: GraphQLReferenceResolver<unknown>;
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  interface GraphQLObjectTypeConfig<TSource, TContext> {
-    resolveReference?: GraphQLReferenceResolver<TContext>;
-  }
-}
-
 /**
  * This plugin installs the schema outlined in the Apollo Federation spec, and
  * the resolvers and types required. Comments have been added to make things

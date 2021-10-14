@@ -34,13 +34,13 @@
   },
   "homepage": "https://github.com/mgagliardo91/postgraphile-federation-plugin#readme",
   "dependencies": {
-    "@apollo/federation": "^0.33.0",
+    "@apollo/subgraph": "^0.1.2",
     "@graphql-tools/wrap": "^8",
     "graphile-utils": "^4.12.1",
     "graphql": "^15.6.1"
   },
   "devDependencies": {
-    "@apollo/gateway": "^0",
+    "@apollo/gateway": "^0.42.2",
     "@types/jest": "^27.0.2",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
     "@typescript-eslint/parser": "^5.0.0",
