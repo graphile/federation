@@ -22,8 +22,10 @@ const SchemaExtensionPlugin = makeExtendSchemaPlugin(build => {
     $$isQuery,
     $$nodeType,
     getTypeByName,
+    scopeByType,
     inflection,
     nodeIdFieldName,
+    getNodeIdForTypeAndIdentifiers,
   } = build;
   // Cache
   let Query: any;
@@ -88,18 +90,61 @@ const SchemaExtensionPlugin = makeExtendSchemaPlugin(build => {
             if (!representation || typeof representation !== "object") {
               throw new Error("Invalid representation");
             }
-            const { __typename, [nodeIdFieldName]: nodeId } = representation;
-            if (!__typename || typeof nodeId !== "string") {
-              throw new Error("Failed to interpret representation");
+
+            const { __typename } = representation;
+            if (!__typename) {
+              throw new Error(
+                "Failed to interpret representation, no typename"
+              );
             }
-            return resolveNode(
-              nodeId,
-              build,
-              fieldContext,
-              data,
-              context,
-              resolveInfo
-            );
+
+            if (nodeIdFieldName in representation) {
+              const { [nodeIdFieldName]: nodeId } = representation;
+              if (typeof nodeId !== "string") {
+                throw new Error(
+                  "Failed to interpret representation, invalid nodeId"
+                );
+              }
+
+              return resolveNode(
+                nodeId,
+                build,
+                fieldContext,
+                data,
+                context,
+                resolveInfo
+              );
+            } else {
+              // This only works with NodePlugin enabled
+              if (!getNodeIdForTypeAndIdentifiers) {
+                throw new Error("Failed to resolve node by identifiers");
+              }
+
+              const type = getTypeByName(__typename);
+              const {
+                pgIntrospection: {
+                  primaryKeyConstraint: { keyAttributes: attrs },
+                },
+              } = scopeByType.get(type);
+              const identifiers = attrs.map(
+                attr => representation[inflection.column(attr)]
+              );
+
+              const nodeId = getNodeIdForTypeAndIdentifiers.call(
+                build,
+                type,
+                ...identifiers
+              );
+
+              return resolveNode(
+                nodeId,
+                build,
+                fieldContext,
+                data,
+                context,
+                resolveInfo
+              );
+            }
           });
         },
 
@@ -153,7 +198,7 @@ const AddKeyPlugin: Plugin = builder => {
     const {
       GraphQLObjectType: spec,
       Self,
-      scope: { isRootQuery },
+      scope: { isRootQuery, pgIntrospection },
     } = context;
     const NodeInterface = getTypeByName(inflection.builtin("Node"));
 
@@ -169,7 +214,8 @@ const AddKeyPlugin: Plugin = builder => {
     build.federationEntityTypes.push(Self);
 
     /*
-     * We're going to add the `@key(fields: "nodeId")` directive to this type.
+     * We're going to add the key directive to this type. If this type has a
+     * defined primary key we will use that, otherwise `@key(fields: "nodeId")`
      * First, we need to generate an `astNode` as if the type was generateted
      * from a GraphQL SDL initially; then we assign this astNode to to the type
      * (via type mutation, ick) so that Apollo Federation's `printSchema` can
@@ -179,9 +225,16 @@ const AddKeyPlugin: Plugin = builder => {
       ...ObjectTypeDefinition(spec),
       ...Self.astNode,
     };
-    astNode.directives.push(
-      Directive("key", { fields: StringValue(nodeIdFieldName) })
-    );
+
+    const {
+      primaryKeyConstraint: { keyAttributes },
+    } = pgIntrospection;
+    const primaryKeyNames = keyAttributes.map(attr => inflection.column(attr));
+    const keyName = primaryKeyNames.length
+      ? primaryKeyNames.join(" ")
+      : nodeIdFieldName;
+
+    astNode.directives.push(Directive("key", { fields: StringValue(keyName) }));
     Self.astNode = astNode;
 
     // We're not changing the interfaces, so return them unmodified.
